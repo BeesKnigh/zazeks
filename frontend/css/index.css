@@ -1,0 +1,45 @@
+/* Фон страницы */
+ body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh; /* Убедимся, что тело страницы занимает 100% высоты */
+    background: linear-gradient(135deg, #a7c7e7, #b87fe2); /* Градиентный фон */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* Контейнер для основной информации */
+.main-container {
+    text-align: center;
+}
+
+/* Заголовок */
+h1 {
+    font-size: 36px;
+    color: #333;
+    margin-bottom: 30px;
+}
+
+/* Контейнер для кнопок */
+.button-container {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+}
+
+/* Кнопки */
+.main-button {
+    padding: 15px 30px;
+    background-color: #5c588a;
+    color: white;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+.main-button:hover {
+    background-color: #4e4873;
+}

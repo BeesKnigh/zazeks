@@ -1,0 +1,69 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Игра: Камень-Ножницы-Бумага</title>
+  <link rel="stylesheet" href="../css/game.css">
+  <style>
+    .game-container {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      position: relative;
+    }
+    .player-container {
+      position: relative;
+    }
+    .computer-container {
+      width: 200px; /* Размер окна компьютера */
+      height: 150px;
+      border: 2px solid #ccc;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin-left: 20px;
+    }
+    #computer-img {
+      max-width: 100%;
+      max-height: 100%;
+    }
+    /* Оверлей для отрисовки bounding box на видео игрока */
+    #overlay-canvas {
+      position: absolute;
+      top: 0;
+      left: 0;
+      pointer-events: none;
+    }
+  </style>
+</head>
+<body>
+  <!-- Кнопка перехода в профиль -->
+  <a href="profile.html" class="profile-btn">Профиль</a>
+
+  <div class="game-container">
+    <!-- Окно игрока -->
+    <div class="player-container">
+      <video id="video" width="640" height="480" autoplay playsinline></video>
+      <canvas id="overlay-canvas" width="640" height="480"></canvas>
+      <!-- Скрытый canvas для захвата кадра -->
+      <canvas id="capture-canvas" width="640" height="480" style="display:none;"></canvas>
+    </div>
+    <!-- Окно компьютера -->
+    <div class="computer-container">
+      <!-- Изначально отображаем placeholder -->
+      <img id="computer-img" src="../images/placeholder.png" alt="Компьютер">
+    </div>
+  </div>
+
+  <!-- Таймер и результат -->
+  <div class="result-container">
+    <p id="timer">Таймер: 00:03</p>
+    <p id="winner">Победитель: </p>
+  </div>
+
+  <!-- Кнопка "Играть" -->
+  <button id="play-button">Играть</button>
+
+  <script src="../JavaScript/game.js"></script>
+</body>
+</html>
