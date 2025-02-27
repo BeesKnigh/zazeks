@@ -1,22 +1,89 @@
+/* Фон страницы */
 body {
     font-family: Arial, sans-serif;
-    background-color: #f3f3f3;
     margin: 0;
     padding: 0;
-}
-
-h1 {
-    text-align: center;
-    margin-top: 20px;
-}
-
-#gameContainer {
+    background: linear-gradient(135deg, #a7c7e7, #b87fe2); /* Градиентный фон */
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 400px;
-    background-color: #fff;
+    position: relative;
+    height: 100vh;
+}
+
+/* Кнопка "Профиль" */
+.profile-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    padding: 10px 20px;
+    background-color: #f44336;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+.profile-btn:hover {
+    background-color: #e53935;
+}
+
+/* Контейнер для игры */
+.game-container {
+    width: 80%;
+    max-width: 1000px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    background-color: white;
+    padding: 50px 30px; /* Увеличили отступ сверху */
     border-radius: 10px;
-    margin-top: 20px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 80px; /* Увеличили отступ сверху для большей пропорциональности */
+}
+
+/* Контейнер для двух окошек */
+.video-windows {
+    display: flex;
+    justify-content: space-between;
+    width: 100%;
+    max-width: 800px;
+    margin-bottom: 30px;
+}
+
+/* Окно с видео */
+.video-box {
+    width: 45%; /* Каждый блок будет занимать 45% ширины */
+    height: 250px; /* Увеличена высота окошек */
+    background-color: white;
+    border-radius: 10px;
+    border: 2px solid #ddd;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+}
+
+/* Подпись под окнами */
+.video-box p {
+    font-size: 18px;
+    color: #333;
+}
+
+/* Контейнер для таймера и победителя */
+.result-container {
+    margin-top: 30px;
+    text-align: center;
+    font-size: 18px;
+}
+
+#timer {
+    font-weight: bold;
+    margin-bottom: 10px;
+}
+
+#winner {
+    font-weight: bold;
+    color: #5c588a;
 }
