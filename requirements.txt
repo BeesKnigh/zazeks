@@ -9,3 +9,4 @@ python-dotenv
 passlib[bcrypt]
 PyJWT
 ipykernel
+python-multipart

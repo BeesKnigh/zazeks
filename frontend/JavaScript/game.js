@@ -1,31 +1,192 @@
-// Пример таймера, который будет работать
-let timer = 0;
-let timerInterval;
-let winner = "";
-
-// Функция для обновления таймера
-function updateTimer() {
-    let minutes = Math.floor(timer / 60);
-    let seconds = timer % 60;
-    document.getElementById('timer').innerText = `Таймер: ${pad(minutes)}:${pad(seconds)}`;
-    timer++;
+// Проверяем наличие токена и user_id
+const token = localStorage.getItem('accessToken');
+if (!token) {
+  alert('Пожалуйста, войдите в систему');
+  window.location.href = 'login.html';
 }
 
-// Функция для добавления ведущего нуля
-function pad(num) {
-    return num < 10 ? "0" + num : num;
+const user_id = localStorage.getItem('user_id');
+if (!user_id) {
+  alert('Не найден user_id. Возможно, вы не залогинены.');
+  window.location.href = 'login.html';
 }
 
-// Функция для обновления победителя
-function setWinner(name) {
-    winner = name;
-    document.getElementById('winner').innerText = `Победитель: ${winner}`;
+// Получаем элементы страницы
+const video = document.getElementById('video');
+const captureCanvas = document.getElementById('capture-canvas');
+const captureCtx = captureCanvas.getContext('2d');
+const overlayCanvas = document.getElementById('overlay-canvas');
+const overlayCtx = overlayCanvas.getContext('2d');
+const winnerDisplay = document.getElementById('winner');
+const timerDisplay = document.getElementById('timer');
+const playButton = document.getElementById('play-button');
+const computerImg = document.getElementById('computer-img');
+
+// Запуск видеопотока с камеры
+navigator.mediaDevices.getUserMedia({ video: true })
+  .then(stream => {
+    video.srcObject = stream;
+  })
+  .catch(err => {
+    console.error("Ошибка доступа к камере:", err);
+    alert("Невозможно получить доступ к камере.");
+  });
+
+// Функция для захвата кадра и отправки его на сервер для детекции
+// Ожидаем, что сервер вернет объект вида: { gesture: "Rock", bbox: [x1, y1, x2, y2] }
+async function detectGesture() {
+  // Рисуем текущий кадр с видео на captureCanvas
+  captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
+
+  return new Promise((resolve, reject) => {
+    captureCanvas.toBlob(async (blob) => {
+      if (!blob) {
+        reject("Ошибка преобразования кадра в Blob");
+        return;
+      }
+      const formData = new FormData();
+      formData.append('file', blob, 'frame.jpg');
+
+      try {
+        const response = await fetch('http://localhost:8000/model/detect', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        if (!response.ok) {
+          throw new Error(`Ошибка детекции: ${response.status}`);
+        }
+        const data = await response.json();
+        // data: { gesture: "Rock", bbox: [x1, y1, x2, y2] }
+        resolve(data);
+      } catch (error) {
+        console.error(error);
+        reject(error);
+      }
+    }, 'image/jpeg');
+  });
 }
 
-// Запуск таймера при старте игры
-timerInterval = setInterval(updateTimer, 1000);
+// Функция для определения результата игры
+function determineResult(userGesture, computerGesture) {
+  if (userGesture === computerGesture) return 'Ничья';
+  if (
+    (userGesture === 'Rock' && computerGesture === 'Scissors') ||
+    (userGesture === 'Scissors' && computerGesture === 'Paper') ||
+    (userGesture === 'Paper' && computerGesture === 'Rock')
+  ) {
+    return 'Победа';
+  }
+  return 'Поражение';
+}
 
-// Пример установки победителя через 30 секунд
-setTimeout(() => {
-    setWinner("Пользователь");
-}, 30000);
+// Функция для генерации случайного выбора компьютера
+function getRandomComputerGesture() {
+  const gestures = ['Rock', 'Paper', 'Scissors'];
+  return gestures[Math.floor(Math.random() * gestures.length)];
+}
+
+// Обновление таймера на экране
+function updateTimer(seconds) {
+  const min = String(Math.floor(seconds / 60)).padStart(2, '0');
+  const sec = String(seconds % 60).padStart(2, '0');
+  timerDisplay.innerText = `Таймер: ${min}:${sec}`;
+}
+
+// Очистка оверлейного канваса
+function clearOverlay() {
+  overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
+}
+
+// Рисование bounding box на оверлейном канвасе
+function drawOverlay(bbox) {
+  clearOverlay();
+  if (bbox && bbox.length === 4) {
+    const [x1, y1, x2, y2] = bbox;
+    overlayCtx.strokeStyle = "red";
+    overlayCtx.lineWidth = 2;
+    overlayCtx.strokeRect(x1, y1, x2 - x1, y2 - y1);
+  }
+}
+
+// Функция для завершения раунда: генерирует выбор компьютера, определяет результат,
+// выводит его и отправляет на сервер, а также обновляет окно компьютера картинкой.
+async function finishRound(finalUserGesture) {
+    const computerGesture = getRandomComputerGesture();
+  
+    // Выбираем картинку для компьютера в зависимости от его жеста
+    let computerImageSrc = '../images/placeholder.png';
+    if (computerGesture === 'Rock') {
+      computerImageSrc = '../images/rock.png';
+    } else if (computerGesture === 'Paper') {
+      computerImageSrc = '../images/paper.png';
+    } else if (computerGesture === 'Scissors') {
+      computerImageSrc = '../images/scissors.png';
+    }
+    computerImg.src = computerImageSrc;
+  
+    const result = determineResult(finalUserGesture, computerGesture);
+    winnerDisplay.innerText = `Победитель: ${result.toUpperCase()} (Ваш: ${finalUserGesture}, Компьютера: ${computerGesture})`;
+  
+    // Отправляем результат игры на сервер
+    try {
+      const gameResponse = await fetch('http://localhost:8000/game/', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          user_choice: finalUserGesture.toLowerCase(),
+          computer_choice: computerGesture.toLowerCase(),
+          result: result
+        })
+      });
+      if (!gameResponse.ok) {
+        console.error("Ошибка при сохранении игры");
+      } else {
+        const gameData = await gameResponse.json();
+        console.log("Игра сохранена:", gameData);
+      }
+    } catch (error) {
+      console.error("Ошибка при отправке результатов игры:", error);
+    }
+    
+    // Очищаем bounding box через 1 секунду после вывода результата
+    setTimeout(clearOverlay, 1000);
+  }
+  
+
+// Основной игровой цикл, запускающийся по кнопке "Играть"
+function startGame() {
+  let countdown = 3; // отсчет 3 секунды
+  updateTimer(countdown);
+  clearOverlay();
+  winnerDisplay.innerText = "";
+  // Сброс картинки компьютера на placeholder (или пустую, если надо)
+  computerImg.src = '../images/placeholder.png';
+
+  let finalUserGesture = null;
+  const countdownInterval = setInterval(async () => {
+    try {
+      const detection = await detectGesture();
+      // Сохраняем последнее обнаруженное значение
+      finalUserGesture = detection.gesture;
+      // Отрисовываем bounding box
+      drawOverlay(detection.bbox);
+      countdown--;
+      updateTimer(countdown);
+      if (countdown <= 0) {
+        clearInterval(countdownInterval);
+        finishRound(finalUserGesture);
+      }
+    } catch (err) {
+      console.error("Ошибка в процессе детекции:", err);
+    }
+  }, 1000);
+}
+
+playButton.addEventListener('click', startGame);

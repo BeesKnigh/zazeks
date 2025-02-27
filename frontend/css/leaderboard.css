@@ -1,0 +1,68 @@
+/* Общий фон и стили для страницы */
+body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    background: linear-gradient(135deg, #a7c7e7, #b87fe2);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 100vh;
+}
+
+/* Кнопка "Назад" в левом верхнем углу */
+a.back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 10px 20px;
+    background-color: #f44336;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 16px;
+}
+a.back-btn:hover {
+    background-color: #e53935;
+}
+
+/* Контейнер лидерборда */
+.leaderboard-container {
+    width: 90%;
+    max-width: 600px;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    margin-top: 80px; /* чтобы не перекрывалось кнопками сверху */
+    text-align: center;
+}
+
+.leaderboard-container h1 {
+    margin-top: 0;
+}
+
+/* Таблица лидерборда */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 20px;
+}
+table th, table td {
+    padding: 10px;
+    border: 1px solid #ddd;
+    text-align: center;
+}
+table th {
+    background-color: #f4f4f4;
+}
+
+/* Стили для аватарки */
+#leaderboard-table img {
+    width: 40px;
+    height: 40px;
+    object-fit: cover;
+    border-radius: 50%;
+}
+

@@ -2,7 +2,7 @@ import cv2
 from ultralytics import YOLO
 
 # Загрузите вашу обученную модель (путь к файлу .pt)
-model = YOLO(r"C:\develop\zazeks\model\learning\runs\detect\train\weights\best.pt")
+model = YOLO(r"C:\develop\zazeks\backend\src\api\best.pt")
 
 # Определите сопоставление номеров классов с их названиями
 class_names = {0: "Paper", 1: "Rock", 2: "Scissors"}
@@ -18,7 +18,7 @@ while True:
 
     # Выполнение детекции на текущем кадре
     # Если требуется задать порог уверенности, можно использовать параметр conf
-    results = model(frame)
+    results = model(frame, conf=0.4)
 
     # Обработка результатов
     # Результаты – это список объектов, по одному для каждого изображения

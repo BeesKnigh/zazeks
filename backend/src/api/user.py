@@ -74,6 +74,18 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 # Эндпоинты
 # ---------------------------
 
+@router.get("/leaderboard", summary="Получить лидерборд")
+def get_leaderboard(db: Session = Depends(get_db)):
+    users = db.query(User).order_by(User.wins.desc()).all()
+    result = []
+    for u in users:
+        result.append({
+            "username": u.username,
+            "photo": u.photo,
+            "wins": u.wins
+        })
+    return result
+
 @router.get("/{user_id}", summary="Получить всю информацию о пользователе по ID")
 def get_user_by_id(
     user_id: int,

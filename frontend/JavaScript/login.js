@@ -1,23 +1,41 @@
-// Получаем форму входа
+// login.js
 const loginForm = document.getElementById('login-form');
 
-// Обработчик отправки формы
-loginForm.addEventListener('submit', function (e) {
-    e.preventDefault(); // Отменяем стандартное поведение формы
+loginForm.addEventListener('submit', async (event) => {
+  event.preventDefault();
 
-    // Получаем данные с формы
-    const login = document.getElementById('login').value;
-    const password = document.getElementById('password').value;
+  const username = document.getElementById('login').value;
+  const password = document.getElementById('password').value;
 
-    // Получаем данные пользователя из localStorage
-    const storedUser = JSON.parse(localStorage.getItem('user'));
+  const bodyData = {
+    username,
+    password
+  };
 
-    // Проверяем, совпадают ли логин и пароль
-    if (storedUser && storedUser.login === login && storedUser.password === password) {
-        // Если данные правильные, перенаправляем на страницу профиля
-        window.location.href = "profile.html";
-    } else {
-        // Если данные неверные, выводим ошибку
-        alert("Неверный логин или пароль.");
+  try {
+    const response = await fetch('http://localhost:8000/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(bodyData)
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      alert(`Ошибка входа: ${errorData.detail || response.statusText}`);
+      return;
     }
+
+    const data = await response.json();
+    console.log('Login success:', data);
+    // Тут важно: сохраняем и access_token, и user_id
+    localStorage.setItem('accessToken', data.access_token);
+    localStorage.setItem('user_id', data.user_id);
+
+    alert('Вход успешный!');
+    window.location.href = 'profile.html';
+
+  } catch (err) {
+    console.error('Fetch error:', err);
+    alert('Ошибка при попытке входа');
+  }
 });
