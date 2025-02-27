@@ -1,0 +1,131 @@
+/* Фон страницы */
+ body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh; /* Убедимся, что тело страницы занимает 100% высоты */
+    background: linear-gradient(135deg, #a7c7e7, #b87fe2); /* Градиентный фон */
+    display: flex;
+    justify-content: center;
+    align-items: center;/* Фон страницы */
+    body {
+        font-family: Arial, sans-serif;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        background: linear-gradient(135deg, #a7c7e7, #b87fe2); /* Gradient background */
+    }
+    
+    /* Белое окно формы */
+    #login-container {
+        width: 100%;
+        max-width: 400px;
+        display: flex;
+        justify-content: center;
+    }
+    
+    #login-form {
+        background-color: #dddce6;
+        padding: 30px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+        text-align: center;
+    }
+    
+    /* Заголовок */
+    #login-form h1 {
+        font-size: 24px;
+        color: #333;
+        margin-bottom: 20px;
+    }
+    
+    /* Формы ввода */
+    input {
+        width: 100%;
+        padding: 10px;
+        margin: 10px 0;
+        border-radius: 5px;
+        border: 1px solid #ccc;
+    }
+    
+    button {
+        width: 100%;
+        padding: 10px;
+        background-color: #5c588a;
+        color: white;
+        border-radius: 5px;
+        border: none;
+        cursor: pointer;
+    }
+    
+    button:hover {
+        background-color: #5c588a;
+    }
+    
+    /* Ссылки */
+    a {
+        color: #5c588a;
+        text-decoration: none;
+        font-weight: bold;
+    }
+    
+    a:hover {
+        color: #5c588a;
+    }
+    
+}
+
+/* Белое окно формы */
+#login-form {
+    background-color: #dddce6;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+    width: 100%;
+    max-width: 400px;
+}
+
+/* Заголовок */
+#login-form h1 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Формы ввода */
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+button {
+    width: 100%;
+    padding: 10px;
+    background-color: #5c588a;
+    color: white;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+}
+
+button:hover {
+    background-color: #5c588a;
+}
+
+/* Ссылки */
+a {
+    color: #5c588a;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+a:hover {
+    color: #5c588a;
+}
