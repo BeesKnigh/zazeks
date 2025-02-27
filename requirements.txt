@@ -2,3 +2,10 @@ ultralytics
 fastapi
 jupyter
 ipykernel
+uvicorn[standard]
+SQLAlchemy
+pymysql
+python-dotenv
+passlib[bcrypt]
+PyJWT
+ipykernel

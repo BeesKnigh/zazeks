@@ -1,0 +1,88 @@
+/* Фон страницы */
+ body {
+    font-family: Arial, sans-serif;
+    margin: 0;
+    padding: 0;
+    height: 100vh; /* Убедимся, что тело страницы занимает 100% высоты */
+    background: linear-gradient(135deg, #a7c7e7, #b87fe2); /* Градиентный фон */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    position: relative; /* Нужно для абсолютного позиционирования кнопки */
+}
+
+/* Кнопка назад */
+a.back-btn {
+    position: absolute;
+    top: 20px;
+    left: 20px;
+    padding: 10px 20px;
+    background-color: #f44336;
+    color: white;
+    border-radius: 5px;
+    text-decoration: none;
+    font-size: 16px;
+}
+
+a.back-btn:hover {
+    background-color: #f44336;
+}
+
+/* Белое окно формы */
+.login-container {
+    width: 100%;
+    max-width: 400px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-direction: column;
+    background-color: #dddce6;
+    padding: 30px;
+    border-radius: 10px;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    text-align: center;
+}
+
+/* Заголовок */
+h1 {
+    font-size: 24px;
+    color: #333;
+    margin-bottom: 20px;
+}
+
+/* Группа для ввода */
+.input-group {
+    width: 100%;
+    margin-bottom: 15px;
+}
+
+/* Поля ввода */
+input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 5px;
+    border: 1px solid #ccc;
+}
+
+/* Кнопка "Подтвердить" */
+button {
+    padding: 10px 30px;
+    background-color: #5c588a;
+    color: white;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+}
+
+button:hover {
+    background-color: #4e4873;
+}
+
+/* Контейнер кнопок */
+.button-container {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+}

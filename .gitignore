@@ -1,2 +1,5 @@
+backend/src/database/__pycache__
+backend/src/api/__pycache__
+backend/src/__pycache__
 /venv
 model/dataset

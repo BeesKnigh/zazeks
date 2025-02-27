@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Игра</title>
+    <link rel="stylesheet" href="../css/game.css">
+</head>
+<body>
+
+    <!-- Кнопка "Профиль" -->
+    <a href="profile.html" class="profile-btn">Профиль</a>
+
+    <div class="game-container">
+        <!-- Окно с пользователем и с роботом -->
+        <div class="video-windows">
+            <!-- Окно с пользователем -->
+            <div class="video-box">
+                <p id="user-description">Что показывает пользователь</p>
+            </div>
+
+            <!-- Окно с роботом -->
+            <div class="video-box">
+                <p id="robot-description">Что показывает робот</p>
+            </div>
+        </div>
+
+        <!-- Таймер и победитель -->
+        <div class="result-container">
+            <p id="timer">Таймер: 00:00</p>
+            <p id="winner">Победитель: </p>
+        </div>
+    </div>
+
+    <script src="../js/game.js"></script>
+</body>
+</html>
