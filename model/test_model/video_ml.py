@@ -2,7 +2,7 @@ import cv2
 from ultralytics import YOLO
 
 # Загрузите вашу обученную модель (путь к файлу .pt)
-model = YOLO(r"C:\develop\zazeks\backend\src\api\best.pt")
+model = YOLO(r"C:\develop\zazeks\model\learning\runs\detect\train3\weights\best.pt")
 
 # Определите сопоставление номеров классов с их названиями
 class_names = {0: "Paper", 1: "Rock", 2: "Scissors"}
