@@ -33,10 +33,20 @@
     h1 {
       margin-top: 20px;
     }
+    /* Новый контейнер для видео-блоков */
+    .video-box-container {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-top: 20px;
+      width: 90%;
+      max-width: 800px;
+      text-align: center;
+    }
     .video-container {
       display: flex;
       justify-content: center;
-      margin-top: 20px;
     }
     .video-box {
       position: relative;
@@ -60,13 +70,32 @@
       transition: opacity 0.5s;
       pointer-events: none;
     }
+    /* Нижняя панель – оставляем как есть */
+    .control-box {
+      background-color: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      margin-top: 20px;
+      width: 90%;
+      max-width: 800px;
+      text-align: center;
+    }
     .controls {
       margin-top: 20px;
     }
-    button {
+    .controls button {
       padding: 10px 20px;
       font-size: 16px;
       margin: 5px;
+      background-color: #5c588a;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .controls button:hover {
+      background-color: #4e4873;
     }
     #status, #battleTimer, #result {
       margin-top: 10px;
@@ -81,24 +110,33 @@
   <a href="profile.html" class="profile-btn">Профиль</a>
   
   <h1>Мультиплеер</h1>
-  <div class="video-container">
-    <div class="video-box">
-      <video id="localVideo" autoplay muted playsinline></video>
-    </div>
-    <div class="video-box" style="position: relative;">
-      <video id="remoteVideo" autoplay playsinline></video>
-      <div id="blackoutOverlay"></div>
+  
+  <!-- Новый белый контейнер под заголовком и над видео -->
+  <div class="video-box-container">
+    <div class="video-container">
+      <div class="video-box">
+        <video id="localVideo" autoplay muted playsinline></video>
+      </div>
+      <div class="video-box">
+        <video id="remoteVideo" autoplay playsinline></video>
+        <div id="blackoutOverlay"></div>
+      </div>
     </div>
   </div>
-  <div class="controls">
-    <button id="joinQueue">Войти в очередь</button>
-    <button id="readyBtn" style="display:none;">Готов</button>
-    <button id="unreadyBtn" style="display:none;">Отмена готовности</button>
-    <button id="playAgainBtn" style="display:none;">Сыграть ещё</button>
+  
+  <!-- Нижняя панель с кнопками и статусом -->
+  <div class="control-box">
+    <div class="controls">
+      <button id="joinQueue">Войти в очередь</button>
+      <button id="readyBtn" style="display:none;">Готов</button>
+      <button id="unreadyBtn" style="display:none;">Отмена готовности</button>
+      <button id="playAgainBtn" style="display:none;">Сыграть ещё</button>
+    </div>
+    <div id="status">Статус: не подключен</div>
+    <div id="battleTimer"></div>
+    <div id="result"></div>
   </div>
-  <div id="status">Статус: не подключен</div>
-  <div id="battleTimer"></div>
-  <div id="result"></div>
+  
   <!-- Подключаем SimplePeer через CDN -->
   <script src="https://cdn.jsdelivr.net/npm/simple-peer@9/simplepeer.min.js"></script>
   <script src="/JavaScript/multiplayer.js"></script>
