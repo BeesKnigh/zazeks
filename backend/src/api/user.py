@@ -95,16 +95,23 @@ def get_user_by_id(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Возвращает информацию о пользователе по его ID (кроме пароля).
-    По умолчанию доступ только авторизованным пользователям.
-    При необходимости можно добавить проверку прав (admin / тот же user).
+    Возвращает информацию о пользователе по его ID.
+    Теперь доступ разрешён только владельцу аккаунта.
     """
+    # Если ID запрашиваемого пользователя не совпадает с текущим пользователем — запрещаем
+    if user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to view this profile"
+        )
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+
     return {
         "id": user.id,
         "username": user.username,
@@ -112,7 +119,6 @@ def get_user_by_id(
         "wins": user.wins,
         "games_played": user.games_played,
     }
-
 
 @router.get("/{user_id}/avatar", summary="Получить аватар пользователя по ID")
 def get_user_avatar(
