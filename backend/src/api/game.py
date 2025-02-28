@@ -32,34 +32,55 @@ class GameResponse(BaseModel):
 
 @router.post("/", response_model=GameResponse, summary="Сохранить игру в историю")
 def create_game(
-    game_data: GameCreate,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+        game_data: GameCreate,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
 ):
     """
     Сохраняет информацию об одной сыгранной игре.
-    Также можно обновить статистику пользователя (games_played, wins).
+    Также обновляет статистику пользователя (games_played, wins).
     """
+
+    print(f"Received game data: {game_data}")  # Логируем входные данные
+
+    # Переводим результат в ожидаемый формат (если пришёл на русском)
+    result_translation = {
+        "win": "win",
+        "loss": "loss",
+        "draw": "draw",
+        "победа": "win",
+        "поражение": "loss",
+        "ничья": "draw"
+    }
+
+    game_result = game_data.result.lower().strip()  # Приводим к нижнему регистру
+    game_result = result_translation.get(game_result, game_result)  # Если найден перевод, применяем его
+
+    print(f"Translated Game result: {game_result}")  # Проверяем, что теперь передаётся
 
     # Создаем запись об игре
     new_game = Game(
         user_id=current_user.id,
         user_choice=game_data.user_choice,
         computer_choice=game_data.computer_choice,
-        result=game_data.result
+        result=game_result
     )
     db.add(new_game)
 
-    # Обновляем статистику пользователя
-    current_user.games_played += 1
-    if game_data.result == "win":
-        current_user.wins += 1
+    user = db.query(User).filter(User.id == current_user.id).first()
 
+    user.games_played += 1
+
+    if game_result == "win":  # Теперь проверка точно сработает
+        print(f"Adding win for user {user.username}")
+        user.wins += 1
+
+    db.flush()  # Принудительно отправляем изменения
     db.commit()
     db.refresh(new_game)
-    db.refresh(current_user)
+    db.refresh(user)
 
-    return new_game  # FastAPI преобразует в GameResponse
+    return new_game
 
 
 @router.get("/{game_id}", response_model=GameResponse, summary="Получить игру по ID")
