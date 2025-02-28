@@ -2,12 +2,15 @@ from fastapi import APIRouter, File, UploadFile, HTTPException
 import cv2
 import numpy as np
 from ultralytics import YOLO
+import os
 
 router = APIRouter()
 
-# Загрузка модели YOLO (укажите корректный путь к файлу best.pt)
-model = YOLO("src/api/best.pt")
-# Определяем соответствие номеров классов жестам
+current_dir = os.path.dirname(__file__)
+model_path = os.path.join(current_dir, "best.pt")
+model = YOLO(model_path)
+
+# Соответствие классов жестам
 class_names = {0: "Paper", 1: "Rock", 2: "Scissors"}
 
 @router.post("/detect", tags=["Model"])
@@ -19,9 +22,9 @@ async def detect(file: UploadFile = File(...)):
         if frame is None:
             raise HTTPException(status_code=400, detail="Неверное изображение")
 
-        results = model(frame, conf=0.4)
-        gesture = "No detection"  # Значение по умолчанию
-        bbox = []  # по умолчанию пустой список
+        results = model(frame)
+        gesture = "No detection"  # значение по умолчанию
+        bbox = []  # если нужны координаты – здесь они, но в клиентском коде используется только gesture
 
         for result in results:
             boxes = result.boxes
@@ -29,11 +32,9 @@ async def detect(file: UploadFile = File(...)):
                 box = boxes[0]
                 cls = int(box.cls[0])
                 gesture = class_names.get(cls, "Unknown")
-                # Получаем координаты bbox и приводим к целым числам
                 bbox = list(map(int, box.xyxy[0].tolist()))
                 break
 
         return {"gesture": gesture, "bbox": bbox}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-

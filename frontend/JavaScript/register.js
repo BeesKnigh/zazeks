@@ -1,48 +1,45 @@
-// Получаем форму и кнопку
+// Получаем форму и кнопку регистрации
 const registerForm = document.getElementById('register-form');
 const registerBtn = document.getElementById('register-btn');
 
+const backendUrl = window.location.origin;
+
 // Вешаем обработчик на отправку формы
 registerForm.addEventListener('submit', async (event) => {
-  event.preventDefault(); // отменяем стандартное поведение (перезагрузку)
+  event.preventDefault();
 
   // Собираем данные формы
   const username = document.getElementById('login').value;
   const password = document.getElementById('password').value;
 
   // Формируем объект с теми же полями, что ожидает бэкенд
-  const bodyData = {
-    username, 
-    password
-  };
+  const bodyData = { username, password };
 
   try {
-    const response = await fetch('http://localhost:8000/auth/register', {
+    const response = await fetch(`${backendUrl}/auth/register`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(bodyData)
     });
 
     if (!response.ok) {
-      // Если ответ HTTP не 2xx, выбросим ошибку
+      // Если ответ HTTP не в диапазоне 2xx, выбрасываем ошибку
       const errorData = await response.json();
       alert(`Ошибка регистрации: ${errorData.detail || response.statusText}`);
       return;
     }
 
-    // Парсим ответ — например, {"msg":"User registered successfully","user_id":3}
+    // Парсим ответ, например: {"msg":"User registered successfully","user_id":3}
     const data = await response.json();
-    console.log('Registration success:', data);
+    console.log('Регистрация успешна:', data);
 
     alert('Регистрация прошла успешно!');
 
-    // Можно сразу перенаправить на страницу логина:
+    // Перенаправляем на страницу входа
     window.location.href = 'login.html';
 
   } catch (err) {
-    console.error('Fetch error:', err);
+    console.error('Ошибка при выполнении запроса:', err);
     alert('Ошибка при попытке регистрации');
   }
 });

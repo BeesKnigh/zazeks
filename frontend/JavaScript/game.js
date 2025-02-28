@@ -1,4 +1,5 @@
-// Проверяем наличие токена и user_id
+const backendUrl = window.location.origin;
+
 const token = localStorage.getItem('accessToken');
 if (!token) {
   alert('Пожалуйста, войдите в систему');
@@ -10,6 +11,13 @@ if (!user_id) {
   alert('Не найден user_id. Возможно, вы не залогинены.');
   window.location.href = 'login.html';
 }
+
+// Объект для маппинга жестов с английского на русский
+const gestureMapping = {
+  "Rock": "Камень",
+  "Paper": "Бумага",
+  "Scissors": "Ножницы"
+};
 
 // Получаем элементы страницы
 const video = document.getElementById('video');
@@ -35,7 +43,6 @@ navigator.mediaDevices.getUserMedia({ video: true })
 // Функция для захвата кадра и отправки его на сервер для детекции
 // Ожидаем, что сервер вернет объект вида: { gesture: "Rock", bbox: [x1, y1, x2, y2] }
 async function detectGesture() {
-  // Рисуем текущий кадр с видео на captureCanvas
   captureCtx.drawImage(video, 0, 0, captureCanvas.width, captureCanvas.height);
 
   return new Promise((resolve, reject) => {
@@ -48,7 +55,7 @@ async function detectGesture() {
       formData.append('file', blob, 'frame.jpg');
 
       try {
-        const response = await fetch('http://localhost:8000/model/detect', {
+        const response = await fetch(`${backendUrl}/model/detect`, {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -96,12 +103,10 @@ function updateTimer(seconds) {
   timerDisplay.innerText = `Таймер: ${min}:${sec}`;
 }
 
-// Очистка оверлейного канваса
 function clearOverlay() {
   overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
 }
 
-// Рисование bounding box на оверлейном канвасе
 function drawOverlay(bbox) {
   clearOverlay();
   if (bbox && bbox.length === 4) {
@@ -113,69 +118,67 @@ function drawOverlay(bbox) {
 }
 
 // Функция для завершения раунда: генерирует выбор компьютера, определяет результат,
-// выводит его и отправляет на сервер, а также обновляет окно компьютера картинкой.
+// выводит его, отправляет на сервер и обновляет окно компьютера картинкой.
 async function finishRound(finalUserGesture) {
-    const computerGesture = getRandomComputerGesture();
-  
-    // Выбираем картинку для компьютера в зависимости от его жеста
-    let computerImageSrc = '../images/placeholder.png';
-    if (computerGesture === 'Rock') {
-      computerImageSrc = '../images/rock.png';
-    } else if (computerGesture === 'Paper') {
-      computerImageSrc = '../images/paper.png';
-    } else if (computerGesture === 'Scissors') {
-      computerImageSrc = '../images/scissors.png';
-    }
-    computerImg.src = computerImageSrc;
-  
-    const result = determineResult(finalUserGesture, computerGesture);
-    winnerDisplay.innerText = `Победитель: ${result.toUpperCase()} (Ваш: ${finalUserGesture}, Компьютера: ${computerGesture})`;
-  
-    // Отправляем результат игры на сервер
-    try {
-      const gameResponse = await fetch('http://localhost:8000/game/', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({
-          user_choice: finalUserGesture.toLowerCase(),
-          computer_choice: computerGesture.toLowerCase(),
-          result: result
-        })
-      });
-      if (!gameResponse.ok) {
-        console.error("Ошибка при сохранении игры");
-      } else {
-        const gameData = await gameResponse.json();
-        console.log("Игра сохранена:", gameData);
-      }
-    } catch (error) {
-      console.error("Ошибка при отправке результатов игры:", error);
-    }
-    
-    // Очищаем bounding box через 1 секунду после вывода результата
-    setTimeout(clearOverlay, 1000);
-  }
-  
+  const computerGesture = getRandomComputerGesture();
 
-// Основной игровой цикл, запускающийся по кнопке "Играть"
+  // Выбираем картинку для компьютера в зависимости от его жеста
+  let computerImageSrc = '/images/placeholder.png';
+  if (computerGesture === 'Rock') {
+    computerImageSrc = '/images/rock.png';
+  } else if (computerGesture === 'Paper') {
+    computerImageSrc = '/images/paper.png';
+  } else if (computerGesture === 'Scissors') {
+    computerImageSrc = '/images/scissors.png';
+  }
+  computerImg.src = computerImageSrc;
+
+  const result = determineResult(finalUserGesture, computerGesture);
+
+  const finalUserGestureRu = gestureMapping[finalUserGesture] || finalUserGesture;
+  const computerGestureRu = gestureMapping[computerGesture] || computerGesture;
+
+  winnerDisplay.innerText = `Победитель: ${result.toUpperCase()} (Ваш: ${finalUserGestureRu}, Компьютера: ${computerGestureRu})`;
+
+  // Отправляем результат игры на сервер
+  try {
+    const gameResponse = await fetch(`${backendUrl}/game/`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        user_choice: finalUserGesture.toLowerCase(),
+        computer_choice: computerGesture.toLowerCase(),
+        result: result
+      })
+    });
+    if (!gameResponse.ok) {
+      console.error("Ошибка при сохранении игры");
+    } else {
+      const gameData = await gameResponse.json();
+      console.log("Игра сохранена:", gameData);
+    }
+  } catch (error) {
+    console.error("Ошибка при отправке результатов игры:", error);
+  }
+
+  setTimeout(clearOverlay, 1000);
+}
+
 function startGame() {
-  let countdown = 3; // отсчет 3 секунды
+  let countdown = 5;
   updateTimer(countdown);
   clearOverlay();
   winnerDisplay.innerText = "";
-  // Сброс картинки компьютера на placeholder (или пустую, если надо)
-  computerImg.src = '../images/placeholder.png';
+  computerImg.src = '/images/placeholder.png';
 
   let finalUserGesture = null;
   const countdownInterval = setInterval(async () => {
     try {
       const detection = await detectGesture();
-      // Сохраняем последнее обнаруженное значение
       finalUserGesture = detection.gesture;
-      // Отрисовываем bounding box
       drawOverlay(detection.bbox);
       countdown--;
       updateTimer(countdown);

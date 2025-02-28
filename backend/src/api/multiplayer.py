@@ -5,93 +5,77 @@ import asyncio
 router = APIRouter()
 
 # In-memory структуры для очереди и матчей
-waiting_players: List[Dict] = []  # Каждый элемент: { "user_id": str, "websocket": WebSocket, "ready": bool, "gesture": None }
-active_matches: Dict[str, dict] = {}  # Ключ: match_id, значение: информация о матче
+waiting_players: List[Dict] = []  # Каждый элемент: { "user_id": str, "websocket": WebSocket, "ready": bool }
+active_matches: Dict[str, dict] = {}  # Ключ: match_id, значение: { players, battle_started, gestures, play_again }
 
 def determine_result(gesture1: str, gesture2: str) -> str:
-    """Возвращает 'draw', 'win' или 'loss' для первого игрока."""
+    if gesture1 != "none" and gesture2 == "none":
+        return "win"
+    if gesture1 == "none" and gesture2 != "none":
+        return "loss"
     if gesture1 == gesture2:
         return "draw"
     if (gesture1 == "Rock" and gesture2 == "Scissors") or \
-       (gesture1 == "Scissors" and gesture2 == "Paper") or \
-       (gesture1 == "Paper" and gesture2 == "Rock"):
+            (gesture1 == "Scissors" and gesture2 == "Paper") or \
+            (gesture1 == "Paper" and gesture2 == "Rock"):
         return "win"
     return "loss"
+
 
 @router.websocket("/ws/multiplayer")
 async def multiplayer_endpoint(websocket: WebSocket):
     await websocket.accept()
+    user_id = None
+    current_match_id = None
     try:
-        # При подключении ожидаем сообщение вида: {"action": "join", "user_id": "..."}
         join_data = await websocket.receive_json()
         if join_data.get("action") != "join" or "user_id" not in join_data:
             await websocket.close(code=1008)
             return
         user_id = join_data["user_id"]
-        waiting_players.append({"user_id": user_id, "websocket": websocket, "ready": False, "gesture": None})
+        waiting_players.append({"user_id": user_id, "websocket": websocket, "ready": False})
         await websocket.send_json({"action": "status", "message": "Вы в очереди на игру."})
-        
-        # Если в очереди два игрока, создаём матч
+
         if len(waiting_players) >= 2:
             player1 = waiting_players.pop(0)
             player2 = waiting_players.pop(0)
             match_id = f"{player1['user_id']}_{player2['user_id']}"
+            current_match_id = match_id
             active_matches[match_id] = {
                 "players": [player1, player2],
                 "battle_started": False,
-                "gestures": {}
+                "gestures": {},
+                "play_again": {}
             }
             match_msg = {"action": "match_found", "match_id": match_id, "players": [player1["user_id"], player2["user_id"]]}
             for p in [player1, player2]:
                 await p["websocket"].send_json(match_msg)
-        
-        # Главный цикл обработки сообщений от клиента
+
         while True:
             data = await websocket.receive_json()
-            # Если получено сообщение сигнала для WebRTC, пересылаем его другому игроку
-            if data.get("action") == "signal":
-                # Найти матч, где этот websocket участвует
-                match = None
-                for mid, m in active_matches.items():
-                    for p in m["players"]:
-                        if p["websocket"] == websocket:
-                            match = m
-                            break
-                    if match:
-                        break
+            action = data.get("action")
+
+            if action == "signal":
+                match = find_match_by_websocket(websocket)
                 if match:
-                    # Пересылаем сигнал другому игроку
                     for p in match["players"]:
                         if p["websocket"] != websocket:
                             await p["websocket"].send_json({"action": "signal", "data": data.get("data")})
                 continue
 
-            # Находим матч, в котором участвует данный websocket
-            match = None
-            current_match_id = None
-            for mid, m in active_matches.items():
-                for p in m["players"]:
-                    if p["websocket"] == websocket:
-                        match = m
-                        current_match_id = mid
-                        break
-                if match:
-                    break
+            match, current_match_id = find_match_by_websocket_and_id(websocket)
             if not match:
                 continue
 
-            action = data.get("action")
             if action == "ready":
                 for p in match["players"]:
                     if p["websocket"] == websocket:
                         p["ready"] = True
-                # Если оба игрока готовы, запускаем битву
                 if all(p["ready"] for p in match["players"]):
                     match["battle_started"] = True
                     start_msg = {"action": "battle_start", "duration": 10}
                     for p in match["players"]:
                         await p["websocket"].send_json(start_msg)
-                    # Запускаем асинхронную задачу, которая через 7 секунд отправит blackout, а через 10 секунд завершит битву
                     asyncio.create_task(send_blackout_and_end(match, current_match_id))
             elif action == "unready":
                 for p in match["players"]:
@@ -104,38 +88,58 @@ async def multiplayer_endpoint(websocket: WebSocket):
                 gesture_value = data.get("gesture")
                 if gesture_value:
                     match["gestures"][user_id] = gesture_value
-                # Если оба игрока отправили свои жесты – определяем победителя
                 if len(match["gestures"]) == 2:
-                    g1 = match["gestures"][match["players"][0]["user_id"]]
-                    g2 = match["gestures"][match["players"][1]["user_id"]]
-                    res = determine_result(g1, g2)
-                    if res == "win":
-                        winner = match["players"][0]["user_id"]
-                    elif res == "loss":
-                        winner = match["players"][1]["user_id"]
-                    else:
-                        winner = "draw"
-                    end_msg = {"action": "battle_end", "winner": winner, "gestures": match["gestures"]}
+                    await conclude_battle(match, current_match_id)
+            elif action == "play_again":
+                # Обработка повторной игры
+                match["play_again"][user_id] = True
+                # Немедленно уведомляем оппонента о желании сыграть ещё
+                for p in match["players"]:
+                    if p["user_id"] != user_id:
+                        await p["websocket"].send_json({
+                            "action": "opponent_play_again",
+                            "message": f"Игрок {user_id} хочет сыграть ещё."
+                        })
+                if len(match["play_again"]) == 2:
+                    # Сбрасываем состояние для новой битвы
                     for p in match["players"]:
-                        await p["websocket"].send_json(end_msg)
-                    del active_matches[current_match_id]
-            # Другие действия можно расширять здесь
-
+                        p["ready"] = False
+                    match["gestures"] = {}
+                    match["play_again"] = {}
+                    match["battle_started"] = False
+                    replay_msg = {"action": "replay", "message": "Начните новую битву, нажмите 'Готов'."}
+                    for p in match["players"]:
+                        await p["websocket"].send_json(replay_msg)
+            # Остальные действия...
     except WebSocketDisconnect:
         waiting_players[:] = [p for p in waiting_players if p["websocket"] != websocket]
-        for mid, m in list(active_matches.items()):
-            for p in m["players"]:
-                if p["websocket"] == websocket:
-                    del active_matches[mid]
-                    break
+        match, current_match_id = find_match_by_websocket_and_id(websocket)
+        if match:
+            disconnect_msg = {"action": "disconnect", "message": f"Игрок {user_id} отключился."}
+            for p in match["players"]:
+                if p["websocket"] != websocket:
+                    try:
+                        await p["websocket"].send_json(disconnect_msg)
+                    except Exception:
+                        pass
+            if current_match_id in active_matches:
+                del active_matches[current_match_id]
 
-async def send_blackout_and_end(match, match_id):
-    await asyncio.sleep(7)  # 7 секунд до blackout
-    blackout_msg = {"action": "blackout", "duration": 3}
-    for p in match["players"]:
-        await p["websocket"].send_json(blackout_msg)
-    await asyncio.sleep(3)  # оставшиеся 3 секунды (итого 10 секунд)
-    # Если какой-либо игрок не отправил жест, присваиваем "none"
+def find_match_by_websocket(ws: WebSocket):
+    for m in active_matches.values():
+        for p in m["players"]:
+            if p["websocket"] == ws:
+                return m
+    return None
+
+def find_match_by_websocket_and_id(ws: WebSocket):
+    for mid, m in active_matches.items():
+        for p in m["players"]:
+            if p["websocket"] == ws:
+                return m, mid
+    return None, None
+
+async def conclude_battle(match, match_id):
     for p in match["players"]:
         if p["user_id"] not in match["gestures"]:
             match["gestures"][p["user_id"]] = "none"
@@ -151,5 +155,14 @@ async def send_blackout_and_end(match, match_id):
     end_msg = {"action": "battle_end", "winner": winner, "gestures": match["gestures"]}
     for p in match["players"]:
         await p["websocket"].send_json(end_msg)
-    if match_id in active_matches:
-        del active_matches[match_id]
+    # Важно: не удаляем матч, чтобы позволить rematch через "play_again".
+    match["battle_started"] = False
+
+async def send_blackout_and_end(match, match_id):
+    await asyncio.sleep(7)
+    blackout_msg = {"action": "blackout", "duration": 3}
+    for p in match["players"]:
+        await p["websocket"].send_json(blackout_msg)
+    await asyncio.sleep(3)
+    if len(match["gestures"]) < 2:
+        await conclude_battle(match, match_id)

@@ -1,5 +1,7 @@
+import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 
 from src.api import auth, user, game, admin, model_inference, multiplayer
 from src.database.base import Base
@@ -12,9 +14,7 @@ app = FastAPI(
     websocket_origins=["http://localhost", "http://localhost:5500", "null"]
 )
 
-origins = [
-    "*",  # можно заменить на список конкретных хостов
-]
+origins = ["*"]
 
 app.add_middleware(
     CORSMiddleware,
@@ -30,7 +30,24 @@ app.include_router(user.router, prefix="/user", tags=["User"])
 app.include_router(game.router, prefix="/game", tags=["Game"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 app.include_router(model_inference.router, prefix="/model", tags=["Model"])
-app.include_router(multiplayer.router)  # WebSocket‑маршруты мультиплеера
+app.include_router(multiplayer.router)
+
+
+project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+html_path = os.path.join(project_root, "frontend", "html")
+css_path = os.path.join(project_root, "frontend", "css")
+js_path = os.path.join(project_root, "frontend", "JavaScript")
+images_path = os.path.join(project_root, "frontend", "images")
+
+app.mount("/images", StaticFiles(directory=images_path), name="images")
+app.mount("/css", StaticFiles(directory=css_path), name="css")
+app.mount("/JavaScript", StaticFiles(directory=js_path), name="js")
+app.mount("/", StaticFiles(directory=html_path, html=True), name="html")
+
+
+print("HTML path:", html_path)
+print("CSS path:", css_path)
+print("JS path:", js_path)
 
 if __name__ == "__main__":
     import uvicorn

@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <title>Мультиплеер - Rock Paper Scissors</title>
-  <link rel="stylesheet" href="../css/multiplayer.css">
+  <link rel="stylesheet" href="/css/multiplayer.css">
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -33,7 +33,6 @@
       border: 2px solid #fff;
       border-radius: 5px;
     }
-    /* Оверлей для затемнения видео противника */
     #blackoutOverlay {
       position: absolute;
       top: 0;
@@ -56,30 +55,33 @@
     #status, #battleTimer, #result {
       margin-top: 10px;
       font-size: 18px;
+      white-space: pre-wrap;
+      text-align: center;
     }
   </style>
 </head>
 <body>
-  <h1>Мультиплеер</h1>
-  <div class="video-container">
-    <div class="video-box">
-      <video id="localVideo" autoplay muted playsinline></video>
-    </div>
-    <div class="video-box" style="position: relative;">
-      <video id="remoteVideo" autoplay playsinline></video>
-      <div id="blackoutOverlay"></div>
-    </div>
+<h1>Мультиплеер</h1>
+<div class="video-container">
+  <div class="video-box">
+    <video id="localVideo" autoplay muted playsinline></video>
   </div>
-  <div class="controls">
-    <button id="joinQueue">Войти в очередь</button>
-    <button id="readyBtn" style="display:none;">Готов</button>
-    <button id="unreadyBtn" style="display:none;">Отмена готовности</button>
+  <div class="video-box" style="position: relative;">
+    <video id="remoteVideo" autoplay playsinline></video>
+    <div id="blackoutOverlay"></div>
   </div>
-  <div id="status">Статус: не подключен</div>
-  <div id="battleTimer"></div>
-  <div id="result"></div>
-  <!-- Подключаем SimplePeer через CDN -->
-  <script src="https://cdn.jsdelivr.net/npm/simple-peer@9/simplepeer.min.js"></script>
-  <script src="../JavaScript/multiplayer.js"></script>
+</div>
+<div class="controls">
+  <button id="joinQueue">Войти в очередь</button>
+  <button id="readyBtn" style="display:none;">Готов</button>
+  <button id="unreadyBtn" style="display:none;">Отмена готовности</button>
+  <button id="playAgainBtn" style="display:none;">Сыграть ещё</button>
+</div>
+<div id="status">Статус: не подключен</div>
+<div id="battleTimer"></div>
+<div id="result"></div>
+<!-- Подключаем SimplePeer через CDN -->
+<script src="https://cdn.jsdelivr.net/npm/simple-peer@9/simplepeer.min.js"></script>
+<script src="/JavaScript/multiplayer.js"></script>
 </body>
 </html>
