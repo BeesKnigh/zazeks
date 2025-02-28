@@ -2,7 +2,7 @@ task: detect
 mode: train
 model: yolo11n.pt
 data: C:\develop\zazeks\model\dataset\data.yaml
-epochs: 100
+epochs: 50
 time: null
 patience: 100
 batch: 16
