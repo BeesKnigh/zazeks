@@ -1,10 +1,17 @@
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
-from src.config import settings
 
-# Для SQLite обязательно нужно указать параметр connect_args
+# Определяем абсолютный путь к директории, где находится данный файл (backend/src/database)
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+# Формируем абсолютный путь к файлу базы данных (база будет храниться в папке database)
+DATABASE_PATH = os.path.join(BASE_DIR, "test.db")
+SQLALCHEMY_DATABASE_URL = f"sqlite:///{DATABASE_PATH}"
+
+# Создаем движок подключения к SQLite (параметр connect_args обязателен для SQLite)
 engine = create_engine(
-    settings.SQLALCHEMY_DATABASE_URL,
+    SQLALCHEMY_DATABASE_URL,
     connect_args={"check_same_thread": False}
 )
 
