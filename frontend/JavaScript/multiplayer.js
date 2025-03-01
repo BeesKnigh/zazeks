@@ -8,7 +8,6 @@ if (!user_id || !token) {
 
 const joinQueueBtn = document.getElementById("joinQueue");
 const readyBtn = document.getElementById("readyBtn");
-const unreadyBtn = document.getElementById("unreadyBtn");
 const playAgainBtn = document.getElementById("playAgainBtn");
 const statusDiv = document.getElementById("status");
 const battleTimerDiv = document.getElementById("battleTimer");
@@ -112,7 +111,6 @@ function connectWebSocket() {
       case "match_found":
         statusDiv.innerText = "Матч найден! Игроки: " + msg.players.join(", ");
         readyBtn.style.display = "inline-block";
-        unreadyBtn.style.display = "inline-block";
         currentMatchPlayers = msg.players;
         initPeerConnection(msg.match_id);
         break;
@@ -132,7 +130,7 @@ function connectWebSocket() {
       case "battle_end":
         latestBattleEnd = msg;
         statusDiv.innerText = "Битва окончена!";
-        resultDiv.innerText = `Победитель: ${msg.winner}\nВаш жест: ${msg.gestures[user_id]}\nЖест противника: ${getOpponentGesture(msg.gestures)}\nGame ID: ${msg.game_id || 'N/A'}`;
+        resultDiv.innerText = `Победитель: ${msg.winner}\nВаш жест: ${msg.gestures[user_id]}\nЖест противника: ${getOpponentGesture(msg.gestures)}`;
         clearInterval(battleCountdownInterval);
         clearInterval(gestureScanInterval);
         playAgainBtn.style.display = "inline-block";
@@ -144,7 +142,6 @@ function connectWebSocket() {
       case "replay":
         statusDiv.innerText = msg.message;
         readyBtn.disabled = false;
-        unreadyBtn.disabled = false;
         playAgainBtn.style.display = "none";
         break;
       case "opponent_play_again":
@@ -190,14 +187,7 @@ function getOpponentGesture(gestures) {
 
 readyBtn.addEventListener("click", () => {
   ws.send(JSON.stringify({ action: "ready", user_id }));
-  readyBtn.disabled = true;
-  unreadyBtn.disabled = false;
-});
-
-unreadyBtn.addEventListener("click", () => {
-  ws.send(JSON.stringify({ action: "unready", user_id }));
-  readyBtn.disabled = false;
-  unreadyBtn.disabled = true;
+  readyBtn.disabled = true;;
 });
 
 function startBattle() {

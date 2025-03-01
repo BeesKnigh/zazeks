@@ -187,13 +187,32 @@ async def conclude_battle(match, match_id):
     g2 = match["gestures"][match["players"][1]["user_id"]]
     res = determine_result(g1, g2)
     if res == "win":
-        winner = match["players"][0]["user_id"]
+        winner_id = match["players"][0]["user_id"]
     elif res == "loss":
-        winner = match["players"][1]["user_id"]
+        winner_id = match["players"][1]["user_id"]
     else:
-        winner = "draw"
-    game_id, savedResult = save_match_result(match, g1, g2, winner)
-    end_msg = {"action": "battle_end", "winner": winner, "gestures": match["gestures"], "game_id": game_id}
+        winner_id = "draw"
+    game_id, savedResult = save_match_result(match, g1, g2, winner_id)
+    
+    # Получение username победителя, если результат не "draw"
+    if winner_id != "draw":
+        from src.database.session import SessionLocal
+        from src.database.models import User
+        db = SessionLocal()
+        try:
+            winner_user = db.query(User).filter(User.id == int(winner_id)).first()
+            winner_username = winner_user.username if winner_user else winner_id
+        finally:
+            db.close()
+    else:
+        winner_username = "draw"
+    
+    end_msg = {
+        "action": "battle_end",
+        "winner": winner_username,
+        "gestures": match["gestures"],
+        "game_id": game_id
+    }
     for p in match["players"]:
         await p["websocket"].send_json(end_msg)
     match["battle_started"] = False

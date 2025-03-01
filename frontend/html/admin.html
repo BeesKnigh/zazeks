@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Админ-панель</title>
+  <link rel="stylesheet" href="/css/admin.css">
+</head>
+<body>
+  <header class="header">
+    <h1>Админ-панель</h1>
+    <nav class="nav">
+      <a href="profile.html">Профиль</a>
+      <a href="dashboard.html">Дашборд</a>
+      <a href="logout">Выход</a>
+    </nav>
+  </header>
+
+  <main class="main-container">
+    <section class="users-section">
+      <h2>Список пользователей</h2>
+      <button id="refresh-btn" class="action-btn">Обновить список</button>
+      <table id="users-table">
+        <thead>
+          <tr>
+            <th>ID</th>
+            <th>Никнейм</th>
+            <th>Фото</th>
+            <th>Победы</th>
+            <th>Действия</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Сюда будут подгружаться данные о пользователях -->
+        </tbody>
+      </table>
+    </section>
+  </main>
+
+  <!-- Модальное окно для изменения никнейма -->
+  <div id="modal" class="modal">
+    <div class="modal-content">
+      <span id="close-modal" class="close">&times;</span>
+      <h3>Изменение никнейма</h3>
+      <input type="text" id="new-username" placeholder="Введите новый никнейм">
+      <button id="confirm-username" class="action-btn">Подтвердить</button>
+    </div>
+  </div>
+
+  <script src="/JavaScript/admin.js"></script>
+</body>
+</html>

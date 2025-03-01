@@ -133,4 +133,13 @@ document.addEventListener('DOMContentLoaded', async () => {
     };
     reader.readAsDataURL(file);
   });
+
+  // Обработчик кнопки "Выйти из аккаунта"
+  const logoutBtn = document.getElementById('logout-btn');
+  logoutBtn.addEventListener('click', (event) => {
+    event.preventDefault();
+    localStorage.removeItem('accessToken');
+    localStorage.removeItem('user_id');
+    window.location.href = 'index.html';
+  });
 });
