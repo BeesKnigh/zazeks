@@ -161,4 +161,4 @@
   </tr>
 </table>
 
-![alt text](pics_readme/image.png)
+![alt text](defay_1x9/pics_readme/image.png)
