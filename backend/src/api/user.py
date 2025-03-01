@@ -10,6 +10,8 @@ from src.database.models import User
 from src.security import verify_password, get_password_hash
 from src.config import settings
 import jwt
+import base64
+import imghdr
 
 router = APIRouter()
 
@@ -93,16 +95,23 @@ def get_user_by_id(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Возвращает информацию о пользователе по его ID (кроме пароля).
-    По умолчанию доступ только авторизованным пользователям.
-    При необходимости можно добавить проверку прав (admin / тот же user).
+    Возвращает информацию о пользователе по его ID.
+    Теперь доступ разрешён только владельцу аккаунта.
     """
+    # Если ID запрашиваемого пользователя не совпадает с текущим пользователем — запрещаем
+    if user_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="You are not allowed to view this profile"
+        )
+
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
+
     return {
         "id": user.id,
         "username": user.username,
@@ -110,7 +119,6 @@ def get_user_by_id(
         "wins": user.wins,
         "games_played": user.games_played,
     }
-
 
 @router.get("/{user_id}/avatar", summary="Получить аватар пользователя по ID")
 def get_user_avatar(
@@ -130,18 +138,23 @@ def get_user_avatar(
     return {"photo": user.photo}
 
 
+MAX_IMAGE_SIZE_MB = 5  # Максимальный размер 5MB
+ALLOWED_IMAGE_TYPES = {"jpeg", "png"}  # Разрешённые форматы
+
+
 @router.put("/{user_id}", summary="Полностью заменить профиль пользователя (PUT)")
 def update_user_profile(
-    user_id: int,
-    user_data: UserProfile,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+        user_id: int,
+        user_data: UserProfile,
+        db: Session = Depends(get_db),
+        current_user: User = Depends(get_current_user)
 ):
     """
-    Полностью заменяет профиль пользователя (PUT).
-    Можно сменить username, photo и т.д.
-    По умолчанию разрешаем только самому пользователю
-    (либо администратору, если такое предусмотрено).
+    Полностью заменяет профиль пользователя (PUT), включая обновление фото.
+    По умолчанию разрешаем только самому пользователю (или администратору, если такое предусмотрено).
+    Добавлены проверки:
+    - Формат фото: только PNG или JPEG
+    - Размер фото: не более 5MB
     """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
@@ -150,22 +163,49 @@ def update_user_profile(
             detail="User not found"
         )
 
-    # Если у вас нет роли "admin", то проверяем, тот ли это пользователь
+    # Проверяем, может ли текущий пользователь обновлять этот профиль
     if current_user.id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough privileges"
         )
 
-    # Обновляем поля (username, photo) — только если они переданы
-    if user_data.username is not None:
-        # Убедитесь, что не нарушаете уникальность username,
-        # если пользователь меняет имя на уже существующее.
-        # Для упрощения примера опускаем эту проверку.
-        user.username = user_data.username
-
+    # Проверка фото (если передано)
     if user_data.photo is not None:
-        user.photo = user_data.photo
+        try:
+            # Убираем "data:image/png;base64," из строки base64
+            header, encoded = user_data.photo.split(",", 1)
+
+            # Декодируем base64
+            decoded_img = base64.b64decode(encoded)
+
+            # Проверяем размер (в байтах)
+            if len(decoded_img) > MAX_IMAGE_SIZE_MB * 1024 * 1024:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Image size exceeds 5MB"
+                )
+
+            # Определяем формат файла (png, jpeg)
+            img_format = imghdr.what(None, decoded_img)
+            if img_format not in ALLOWED_IMAGE_TYPES:
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Only PNG and JPG images are allowed"
+                )
+
+            # Если всё ок, сохраняем фото в БД
+            user.photo = user_data.photo
+
+        except (ValueError, IndexError):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid image format"
+            )
+
+    # Обновляем другие данные, если переданы
+    if user_data.username is not None:
+        user.username = user_data.username
 
     db.commit()
     db.refresh(user)
