@@ -18,7 +18,7 @@ const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 const blackoutOverlay = document.getElementById("blackoutOverlay");
 
-// Создаем canvas-оверлей для отрисовки рамок
+// Создаем canvas для рамок
 const overlayCanvas = document.createElement('canvas');
 overlayCanvas.style.position = 'absolute';
 overlayCanvas.style.pointerEvents = 'none';
@@ -33,13 +33,14 @@ let gestureScanInterval;
 let battleDuration = 10; // секунд
 let battleTimer = battleDuration;
 let finalGesture = "none"; // итоговый жест
+let lastValidGesture = "none"; // сохраняет последний корректный жест
+let currentMatchPlayers = [];
+// Клиент теперь не сохраняет результат – сервер делает сохранение
+let latestBattleEnd = null; // для хранения последнего сообщения battle_end
 
-// Определяем базовый URL для API запросов
 const backendUrl = window.location.origin;
-// Определяем URL для WebSocket (учитываем протокол: wss для HTTPS, ws для HTTP)
 const wsUrl = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/multiplayer';
 
-// Функция для обновления позиции и размера canvas в соответствии с localVideo
 function updateOverlayCanvas() {
   const rect = localVideo.getBoundingClientRect();
   overlayCanvas.style.left = rect.left + "px";
@@ -50,11 +51,6 @@ function updateOverlayCanvas() {
 window.addEventListener('resize', updateOverlayCanvas);
 localVideo.addEventListener('loadedmetadata', updateOverlayCanvas);
 
-/**
- * Детекция жеста через модель.
- * Захватывает кадр из localVideo и отправляет на /model/detect.
- * Возвращает объект {gesture, bbox}. Если модель не обнаружила жест – gesture = "none".
- */
 async function detectGesture() {
   return new Promise((resolve, reject) => {
     try {
@@ -66,9 +62,7 @@ async function detectGesture() {
       const tempCtx = tempCanvas.getContext('2d');
       tempCtx.drawImage(localVideo, 0, 0, width, height);
       tempCanvas.toBlob(async (blob) => {
-        if (!blob) {
-          return reject("Ошибка преобразования кадра в Blob");
-        }
+        if (!blob) return reject("Ошибка преобразования кадра в Blob");
         const formData = new FormData();
         formData.append('file', blob, 'frame.jpg');
         try {
@@ -77,32 +71,21 @@ async function detectGesture() {
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
           });
-          if (!response.ok) {
-            return reject(`Ошибка детекции: ${response.status}`);
-          }
+          if (!response.ok) return reject(`Ошибка детекции: ${response.status}`);
           const data = await response.json();
-          resolve({
-            gesture: data.gesture === "No detection" ? "none" : data.gesture,
-            bbox: data.bbox // предполагается, что bbox имеет формат [x1, y1, x2, y2]
-          });
-        } catch (err) {
-          reject(err);
-        }
+          let detected = data.gesture === "No detection" ? "none" : data.gesture;
+          if (detected !== "none") lastValidGesture = detected;
+          resolve({ gesture: detected, bbox: data.bbox });
+        } catch (err) { reject(err); }
       }, 'image/jpeg');
-    } catch (e) {
-      reject(e);
-    }
+    } catch (e) { reject(e); }
   });
 }
 
-/**
- * Рисует прямоугольник на оверлее, если bbox передан.
- */
 function drawBoundingBox(bbox) {
   updateOverlayCanvas();
   overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
   if (bbox && bbox.length === 4) {
-    // Приводим координаты к размеру видео (если требуется масштабирование)
     const [x1, y1, x2, y2] = bbox;
     const videoWidth = localVideo.videoWidth || overlayCanvas.width;
     const videoHeight = localVideo.videoHeight || overlayCanvas.height;
@@ -114,17 +97,12 @@ function drawBoundingBox(bbox) {
   }
 }
 
-/**
- * Устанавливаем WebSocket-соединение для сигналинга и управления битвой.
- */
 function connectWebSocket() {
   ws = new WebSocket(wsUrl);
-
   ws.onopen = () => {
     statusDiv.innerText = "Подключено к серверу. Ожидание очереди...";
-    ws.send(JSON.stringify({ action: "join", user_id: user_id }));
+    ws.send(JSON.stringify({ action: "join", user_id }));
   };
-
   ws.onmessage = (event) => {
     const msg = JSON.parse(event.data);
     console.log("Получено:", msg);
@@ -136,12 +114,11 @@ function connectWebSocket() {
         statusDiv.innerText = "Матч найден! Игроки: " + msg.players.join(", ");
         readyBtn.style.display = "inline-block";
         unreadyBtn.style.display = "inline-block";
+        currentMatchPlayers = msg.players;
         initPeerConnection(msg.match_id);
         break;
       case "signal":
-        if (peer) {
-          peer.signal(msg.data);
-        }
+        if (peer) peer.signal(msg.data);
         break;
       case "battle_start":
         statusDiv.innerText = "Битва начинается!";
@@ -151,17 +128,16 @@ function connectWebSocket() {
       case "blackout":
         statusDiv.innerText = "Последние секунды битвы: экран противника затемняется.";
         blackoutOverlay.style.opacity = 1;
-        setTimeout(() => {
-          blackoutOverlay.style.opacity = 0;
-        }, msg.duration * 1000);
+        setTimeout(() => { blackoutOverlay.style.opacity = 0; }, msg.duration * 1000);
         break;
       case "battle_end":
+        latestBattleEnd = msg;
+        // Сервер уже подставил корректные значения
         statusDiv.innerText = "Битва окончена!";
-        resultDiv.innerText = `Победитель: ${msg.winner}\nВаш жест: ${msg.gestures[user_id]}\nЖест противника: ${getOpponentGesture(msg.gestures)}`;
+        resultDiv.innerText = `Победитель: ${msg.winner}\nВаш жест: ${msg.gestures[user_id]}\nЖест противника: ${getOpponentGesture(msg.gestures)}\nGame ID: ${msg.game_id || 'N/A'}`;
         clearInterval(battleCountdownInterval);
         clearInterval(gestureScanInterval);
         playAgainBtn.style.display = "inline-block";
-        // Очищаем оверлей
         overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
         break;
       case "player_unready":
@@ -183,53 +159,30 @@ function connectWebSocket() {
         console.log("Неизвестное действие:", msg);
     }
   };
-
-  ws.onclose = () => {
-    statusDiv.innerText = "Соединение закрыто.";
-  };
-
-  ws.onerror = (err) => {
-    console.error("Ошибка WebSocket:", err);
-  };
+  ws.onclose = () => { statusDiv.innerText = "Соединение закрыто."; };
+  ws.onerror = (err) => { console.error("Ошибка WebSocket:", err); };
 }
 
-/**
- * Инициализация WebRTC-соединения через SimplePeer.
- */
 function initPeerConnection(match_id) {
   navigator.mediaDevices.getUserMedia({ video: true, audio: false })
     .then(stream => {
       localStream = stream;
       localVideo.srcObject = stream;
       updateOverlayCanvas();
-      const isInitiator = (user_id === match_id.split("_")[0]);
+      const isInitiator = (parseInt(user_id) === parseInt(match_id.split("_")[0]));
       peer = new SimplePeer({
         initiator: isInitiator,
         trickle: true,
         stream: localStream,
         config: { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] }
       });
-
-      peer.on('signal', data => {
-        ws.send(JSON.stringify({ action: "signal", data: data }));
-      });
-
-      peer.on('stream', stream => {
-        remoteVideo.srcObject = stream;
-      });
-
-      peer.on('error', err => {
-        console.error("Ошибка в SimplePeer:", err);
-      });
+      peer.on('signal', data => { ws.send(JSON.stringify({ action: "signal", data })); });
+      peer.on('stream', stream => { remoteVideo.srcObject = stream; });
+      peer.on('error', err => { console.error("Ошибка в SimplePeer:", err); });
     })
-    .catch(err => {
-      console.error("Ошибка получения видеопотока:", err);
-    });
+    .catch(err => { console.error("Ошибка получения видеопотока:", err); });
 }
 
-/**
- * Возвращает жест противника из объекта жестов.
- */
 function getOpponentGesture(gestures) {
   for (let key in gestures) {
     if (key !== user_id) return gestures[key];
@@ -237,52 +190,54 @@ function getOpponentGesture(gestures) {
   return "none";
 }
 
-/**
- * Обработка кнопок готовности.
- */
 readyBtn.addEventListener("click", () => {
-  ws.send(JSON.stringify({ action: "ready", user_id: user_id }));
+  ws.send(JSON.stringify({ action: "ready", user_id }));
   readyBtn.disabled = true;
   unreadyBtn.disabled = false;
 });
 
 unreadyBtn.addEventListener("click", () => {
-  ws.send(JSON.stringify({ action: "unready", user_id: user_id }));
+  ws.send(JSON.stringify({ action: "unready", user_id }));
   readyBtn.disabled = false;
   unreadyBtn.disabled = true;
 });
 
-/**
- * Функция запуска битвы.
- * Запускается обратный отсчёт и параллельно каждые 2 секунды запускается детекция жеста,
- * результат которой отображается (с рамкой) и сохраняется как finalGesture.
- */
 function startBattle() {
   battleTimer = battleDuration;
   battleTimerDiv.innerText = `Битва: ${battleTimer} сек`;
-
-  // Запускаем обратный отсчёт каждую секунду
   battleCountdownInterval = setInterval(() => {
     battleTimer--;
     battleTimerDiv.innerText = `Битва: ${battleTimer} сек`;
     if (battleTimer <= 0) {
       clearInterval(battleCountdownInterval);
       clearInterval(gestureScanInterval);
-      // Выполняем финальную детекцию жеста и отправляем результат
       detectGesture().then((detection) => {
-        finalGesture = detection.gesture;
-        ws.send(JSON.stringify({ action: "gesture", gesture: finalGesture, user_id: user_id }));
+        finalGesture = (detection.gesture === "none" && lastValidGesture !== "none")
+          ? lastValidGesture
+          : detection.gesture;
+        console.log("Sending final gesture:", finalGesture);
+        ws.send(JSON.stringify({ 
+          action: "gesture", 
+          gesture: finalGesture, 
+          lastValidGesture: lastValidGesture, 
+          user_id 
+        }));
       }).catch(err => {
         console.error("Ошибка финальной детекции:", err);
-        ws.send(JSON.stringify({ action: "gesture", gesture: finalGesture, user_id: user_id }));
+        console.log("Sending final gesture (with error):", finalGesture);
+        ws.send(JSON.stringify({ 
+          action: "gesture", 
+          gesture: finalGesture, 
+          lastValidGesture: lastValidGesture, 
+          user_id 
+        }));
       });
     }
   }, 1000);
-
-  // Каждые 2 секунды запускаем детекцию и отрисовку рамки
   gestureScanInterval = setInterval(async () => {
     try {
       const detection = await detectGesture();
+      if (detection.gesture !== "none") lastValidGesture = detection.gesture;
       finalGesture = detection.gesture;
       drawBoundingBox(detection.bbox);
       console.log("Детекция:", detection);
@@ -292,21 +247,15 @@ function startBattle() {
   }, 2000);
 }
 
-/**
- * При нажатии кнопки "Войти в очередь".
- */
 joinQueueBtn.addEventListener("click", () => {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
     connectWebSocket();
   } else {
-    ws.send(JSON.stringify({ action: "join", user_id: user_id }));
+    ws.send(JSON.stringify({ action: "join", user_id }));
   }
 });
 
-/**
- * При нажатии кнопки "Сыграть ещё" отправляем запрос на повторную игру.
- */
 playAgainBtn.addEventListener("click", () => {
   playAgainBtn.style.display = "none";
-  ws.send(JSON.stringify({ action: "play_again", user_id: user_id }));
+  ws.send(JSON.stringify({ action: "play_again", user_id }));
 });

@@ -4,18 +4,17 @@ from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from typing import Optional
 from datetime import datetime, timedelta
+import jwt
+import base64
+import imghdr
 
 from src.database.session import get_db
 from src.database.models import User
 from src.security import verify_password, get_password_hash
 from src.config import settings
-import jwt
-import base64
-import imghdr
 
 router = APIRouter()
 
-# Используем OAuth2PasswordBearer, указывая эндпоинт логина:
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 # ---------------------------
@@ -26,7 +25,6 @@ class UserProfile(BaseModel):
     """Схема для полного обновления профиля (с нуля)."""
     username: Optional[str] = None
     photo: Optional[str] = None
-    # Добавьте другие поля, если нужно обновлять больше данных
 
 class PasswordChange(BaseModel):
     """Схема для смены пароля по логину."""
@@ -41,14 +39,14 @@ class PasswordChange(BaseModel):
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> User:
     """
     Извлекает текущего пользователя из JWT-токена.
-    - Декодирует токен, получает username (sub).
-    - Ищет пользователя в базе по username.
+    - Декодирует токен, получает user_id (sub).
+    - Ищет пользователя в базе по id.
     - Если что-то не так, выбрасывает исключение HTTP 401.
     """
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        username: str = payload.get("sub")
-        if username is None:
+        user_id = payload.get("sub")
+        if user_id is None:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token payload",
@@ -64,7 +62,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
             detail="Could not validate token",
         )
 
-    user = db.query(User).filter(User.username == username).first()
+    user = db.query(User).filter(User.id == int(user_id)).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -76,8 +74,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 # Эндпоинты
 # ---------------------------
 
-@router.get("/leaderboard", summary="Получить лидерборд")
-def get_leaderboard(db: Session = Depends(get_db)):
+@router.get("/leaderboard/offline", summary="Получить оффлайн лидерборд (игры против бота)")
+def get_offline_leaderboard(db: Session = Depends(get_db)):
     users = db.query(User).order_by(User.wins.desc()).all()
     result = []
     for u in users:
@@ -85,6 +83,18 @@ def get_leaderboard(db: Session = Depends(get_db)):
             "username": u.username,
             "photo": u.photo,
             "wins": u.wins
+        })
+    return result
+
+@router.get("/leaderboard/online", summary="Получить онлайн лидерборд (игры против игроков)")
+def get_online_leaderboard(db: Session = Depends(get_db)):
+    users = db.query(User).order_by(User.online_wins.desc()).all()
+    result = []
+    for u in users:
+        result.append({
+            "username": u.username,
+            "photo": u.photo,
+            "online_wins": u.online_wins
         })
     return result
 
@@ -98,7 +108,6 @@ def get_user_by_id(
     Возвращает информацию о пользователе по его ID.
     Теперь доступ разрешён только владельцу аккаунта.
     """
-    # Если ID запрашиваемого пользователя не совпадает с текущим пользователем — запрещаем
     if user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -118,6 +127,8 @@ def get_user_by_id(
         "photo": user.photo,
         "wins": user.wins,
         "games_played": user.games_played,
+        "online_wins": user.online_wins,
+        "online_games": user.online_games,
     }
 
 @router.get("/{user_id}/avatar", summary="Получить аватар пользователя по ID")
@@ -137,10 +148,8 @@ def get_user_avatar(
         )
     return {"photo": user.photo}
 
-
 MAX_IMAGE_SIZE_MB = 5  # Максимальный размер 5MB
 ALLOWED_IMAGE_TYPES = {"jpeg", "png"}  # Разрешённые форматы
-
 
 @router.put("/{user_id}", summary="Полностью заменить профиль пользователя (PUT)")
 def update_user_profile(
@@ -151,7 +160,7 @@ def update_user_profile(
 ):
     """
     Полностью заменяет профиль пользователя (PUT), включая обновление фото.
-    По умолчанию разрешаем только самому пользователю (или администратору, если такое предусмотрено).
+    По умолчанию разрешаем только самому пользователю.
     Добавлены проверки:
     - Формат фото: только PNG или JPEG
     - Размер фото: не более 5MB
@@ -175,17 +184,14 @@ def update_user_profile(
         try:
             # Убираем "data:image/png;base64," из строки base64
             header, encoded = user_data.photo.split(",", 1)
-
             # Декодируем base64
             decoded_img = base64.b64decode(encoded)
-
             # Проверяем размер (в байтах)
             if len(decoded_img) > MAX_IMAGE_SIZE_MB * 1024 * 1024:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Image size exceeds 5MB"
                 )
-
             # Определяем формат файла (png, jpeg)
             img_format = imghdr.what(None, decoded_img)
             if img_format not in ALLOWED_IMAGE_TYPES:
@@ -193,10 +199,8 @@ def update_user_profile(
                     status_code=status.HTTP_400_BAD_REQUEST,
                     detail="Only PNG and JPG images are allowed"
                 )
-
             # Если всё ок, сохраняем фото в БД
             user.photo = user_data.photo
-
         except (ValueError, IndexError):
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
@@ -214,49 +218,10 @@ def update_user_profile(
         "user": {
             "id": user.id,
             "username": user.username,
-            "photo": user.photo
+            "photo": user.photo,
+            "wins": user.wins,
+            "games_played": user.games_played,
+            "online_wins": user.online_wins,
+            "online_games": user.online_games,
         }
     }
-
-
-@router.put("/change-password", summary="Изменить пароль по логину")
-def change_password(
-    data: PasswordChange,
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
-):
-    """
-    Смена пароля по логину:
-    - Пользователь (или админ, если у вас есть такая логика)
-      может поменять пароль, зная старый пароль.
-    - Если текущий пользователь не совпадает с логином,
-      бросаем 403 (если нет admin-ролей).
-    """
-    user = db.query(User).filter(User.username == data.login).first()
-    if not user:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="User not found"
-        )
-
-    # Проверка прав: если текущий пользователь != data.login
-    # (и при условии, что у нас нет понятия admin),
-    # то запрещаем смену пароля:
-    if current_user.username != data.login:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Not enough privileges"
-        )
-
-    # Проверяем старый пароль
-    if not verify_password(data.old_password, user.password_hash):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid old password"
-        )
-
-    # Устанавливаем новый пароль
-    user.password_hash = get_password_hash(data.new_password)
-    db.commit()
-    db.refresh(user)
-    return {"msg": "Password changed successfully"}

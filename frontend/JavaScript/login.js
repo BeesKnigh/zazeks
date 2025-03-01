@@ -30,7 +30,6 @@ loginForm.addEventListener('submit', async (event) => {
     localStorage.setItem('accessToken', data.access_token);
     localStorage.setItem('user_id', data.user_id);
 
-    alert('Вход успешный!');
     window.location.href = 'profile.html';
 
   } catch (err) {

@@ -1,7 +1,6 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const backendUrl = window.location.origin;
 
-  // 1. Проверяем наличие токена (если нет, отправляем на login.html)
   const token = localStorage.getItem('accessToken');
   if (!token) {
     alert('Пожалуйста, войдите в систему');
@@ -9,7 +8,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // 2. Получаем user_id из localStorage (ключ "user_id" должен сохраняться при логине)
   const user_id = localStorage.getItem('user_id');
   if (!user_id) {
     alert('Не найден user_id. Возможно, вы не залогинены.');
@@ -17,7 +15,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // 3. Делаем запрос GET /user/{user_id} для получения данных профиля
   try {
     const response = await fetch(`${backendUrl}/user/${user_id}`, {
       method: 'GET',
@@ -38,7 +35,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userData = await response.json();
     console.log('Профиль пользователя:', userData);
 
-    // 4. Заполняем элементы страницы данными профиля
     document.getElementById('nickname').innerText = userData.username;
     if (userData.photo) {
       document.getElementById('profile-pic').src = userData.photo;
@@ -53,7 +49,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
-  // 5. Логика для изменения никнейма
   const editNicknameBtn = document.getElementById('edit-nickname-btn');
   const nicknameInputContainer = document.getElementById('nickname-input-container');
   const confirmNicknameBtn = document.getElementById('confirm-nickname-btn');
@@ -71,7 +66,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
 
     try {
-      // PUT /user/{user_id}, передаём { "username": "новыйНик" }
       const response = await fetch(`${backendUrl}/user/${user_id}`, {
         method: 'PUT',
         headers: {
@@ -88,7 +82,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       const data = await response.json();
       console.log('Никнейм обновлён:', data);
 
-      // Обновляем отображение на странице
       document.getElementById('nickname').innerText = newNickname;
       nicknameInputContainer.style.display = 'none';
       newNicknameInput.value = '';
@@ -99,7 +92,6 @@ document.addEventListener('DOMContentLoaded', async () => {
     }
   });
 
-  // 6. Логика для смены фото (через base64)
   const changePhotoBtn = document.getElementById('change-photo-btn');
   const profilePicInput = document.getElementById('profile-pic-input');
   const profilePic = document.getElementById('profile-pic');
@@ -118,7 +110,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       console.log('Изображение в base64:', base64URL);
 
       try {
-        // Отправляем PUT-запрос на обновление фото
         const response = await fetch(`${backendUrl}/user/${user_id}`, {
           method: 'PUT',
           headers: {
@@ -135,7 +126,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         const data = await response.json();
         console.log('Фото обновлено:', data);
 
-        // Обновляем изображение на странице
         profilePic.src = base64URL;
 
       } catch (err) {

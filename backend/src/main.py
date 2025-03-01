@@ -1,9 +1,11 @@
+# src/main.py
+
 import os
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from src.api import auth, user, game, admin, model_inference, multiplayer
+from src.api import auth, user, game, admin, model_inference, multiplayer, multiplayer_result
 from src.database.base import Base
 from src.database.session import engine
 
@@ -31,7 +33,7 @@ app.include_router(game.router, prefix="/game", tags=["Game"])
 app.include_router(admin.router, prefix="/admin", tags=["Admin"])
 app.include_router(model_inference.router, prefix="/model", tags=["Model"])
 app.include_router(multiplayer.router)
-
+app.include_router(multiplayer_result.router, prefix="/multiplayer", tags=["Multiplayer"])
 
 project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 html_path = os.path.join(project_root, "frontend", "html")

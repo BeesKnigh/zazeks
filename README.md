@@ -51,8 +51,13 @@
 1. **Клонируйте репозиторий:**
 
    ```bash
-   git clone https://github.com/your-username/rock-paper-scissors.git
-   cd rock-paper-scissors
+   git clone https://github.com/BeesKnigh/zazeks.git
+   cd zazeks
+
+2. **Создайте виртуальное окружение и войдите в него**
+    ``` bash
+    python -m venv venv
+    venv\Scripts\activate
 
 2. **Установите необходимые зависимости:**
     ```bash
@@ -60,7 +65,12 @@
 
 3. **Запуск backend части:**
     ```bash
-    .\venv\Scripts\activate; cd .\backend\; uvicorn src.main:app
+    uvicorn --app-dir backend src.main:app
+
+4. **Запуск backend части:**
+ - Все можно заходить на сайт и играть оффлайн:
+    ```bash
+    http://127.0.0.1:8000
 
 ---
 
@@ -78,6 +88,6 @@
  - Абдюков Артем - **Backend**, TG: @tem_702
  - Байрамов Денис - **Backend**, TG: @Denbay0
  - Штеренфельд Анна - **Frontend**, TG: @mbhopper
- - Землянский Максим - **Pentest**, TG: @kusotsutar
+ - Землянский Максим - **Penistesting**, TG: @kusotsutar
 
-![alt text](frontend/images/placeholder.png)
+![alt text](image.png)
