@@ -142,7 +142,7 @@ def find_match_by_websocket_and_id(ws: WebSocket):
 
 def save_match_result(match, g1, g2, winner):
     from src.database.session import SessionLocal
-    from src.database.models import MultiplayerGame
+    from src.database.models import MultiplayerGame, User
     db = SessionLocal()
     try:
         player1_id = int(match["players"][0]["user_id"])
@@ -156,6 +156,18 @@ def save_match_result(match, g1, g2, winner):
             result=resultValue
         )
         db.add(new_game)
+        # Обновляем онлайн-статистику для обоих игроков
+        player1 = db.query(User).filter(User.id == player1_id).first()
+        player2 = db.query(User).filter(User.id == player2_id).first()
+        if player1:
+            player1.online_games = (player1.online_games or 0) + 1
+        if player2:
+            player2.online_games = (player2.online_games or 0) + 1
+        if resultValue == "player1" and player1:
+            player1.online_wins = (player1.online_wins or 0) + 1
+        elif resultValue == "player2" and player2:
+            player2.online_wins = (player2.online_wins or 0) + 1
+
         db.commit()
         db.refresh(new_game)
         return new_game.id, resultValue
