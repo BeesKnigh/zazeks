@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.database.session import get_db
 from src.database.models import User, Game
-from src.api.user import get_current_user  # или ваш метод получения текущего пользователя
+from src.api.user import get_current_user
 
 router = APIRouter()
 
@@ -75,7 +75,6 @@ def create_game(
             detail="Duplicate game submission detected. Please wait before submitting again."
         )
 
-    # Создаем запись об игре
     new_game = Game(
         user_id=current_user.id,
         user_choice=game_data.user_choice,
@@ -84,14 +83,13 @@ def create_game(
     )
     db.add(new_game)
 
-    # Обновляем статистику пользователя
     user = db.query(User).filter(User.id == current_user.id).first()
     user.games_played += 1
     if game_result == "win":
         print(f"Adding win for user {user.username}")
         user.wins += 1
 
-    db.flush()  # Принудительно отправляем изменения в БД до коммита
+    db.flush()
     db.commit()
     db.refresh(new_game)
     db.refresh(user)
@@ -114,8 +112,6 @@ def get_game_by_id(
     if not game:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Game not found")
 
-    # Если вы хотите запретить другим пользователям смотреть чужие игры,
-    # можно добавить проверку
     if game.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough privileges")
 
@@ -133,8 +129,6 @@ def get_all_games_for_user(
     Если нужно, проверяем права: либо сам пользователь, либо админ.
     """
     if current_user.id != user_id:
-        # Можно дополнительно проверить, есть ли у current_user роль "admin"
-        # Для простоты примера бросаем 403
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough privileges")
 
     games = db.query(Game).filter(Game.user_id == user_id).all()
@@ -153,8 +147,7 @@ def add_win(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    # Проверка прав - например, только сам пользователь или администратор может это делать
+    
     if user.id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough privileges")
 

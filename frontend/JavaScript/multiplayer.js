@@ -35,7 +35,6 @@ let battleTimer = battleDuration;
 let finalGesture = "none"; // итоговый жест
 let lastValidGesture = "none"; // сохраняет последний корректный жест
 let currentMatchPlayers = [];
-// Клиент теперь не сохраняет результат – сервер делает сохранение
 let latestBattleEnd = null; // для хранения последнего сообщения battle_end
 
 const backendUrl = window.location.origin;
@@ -132,7 +131,6 @@ function connectWebSocket() {
         break;
       case "battle_end":
         latestBattleEnd = msg;
-        // Сервер уже подставил корректные значения
         statusDiv.innerText = "Битва окончена!";
         resultDiv.innerText = `Победитель: ${msg.winner}\nВаш жест: ${msg.gestures[user_id]}\nЖест противника: ${getOpponentGesture(msg.gestures)}\nGame ID: ${msg.game_id || 'N/A'}`;
         clearInterval(battleCountdownInterval);

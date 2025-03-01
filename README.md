@@ -82,6 +82,88 @@
 
 ---
 
+## 👥 Команда разработчиков
+
+<table>
+  <tr>
+    <td align="center" style="border: 1px solid #555;">
+      <img src="https://github.com/GigaGitCoder.png" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
+      <b>Егор Холкин</b><br />
+      <sub><i>Тимлид, Full-stack разработчик</i></sub>
+      <hr style="border: 1px solid #555; margin: 10px 0;">
+      <div align="left">
+      <b>Вклад в проект:</b><br />
+      • Backend/Frontend разработка<br />
+      • Дизайн проекта<br />
+      • Работа с базами данных<br />
+      • Распознавание жестов
+      <hr style="border: 1px solid #555; margin: 10px 0;">
+      <b>Контакты:</b><br />
+      <a href="https://github.com/GigaGitCoder">GitHub</a> • <a href="https://t.me/IgorXmel">Telegram</a>
+      </div>
+    </td>
+    <td align="center" style="border: 1px solid #555;">
+      <img src="https://github.com/Anton2442.png" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
+      <b>Антон Михайличенко</b><br />
+      <sub><i>Backend разработчик</i></sub>
+      <hr style="border: 1px solid #555; margin: 10px 0;">
+      <div align="left">
+      <b>Вклад в проект:</b><br />
+      • Backend разработка<br />
+      • Работа с базами данных<br />
+      • Распознавание жестов
+      <hr style="border: 1px solid #555; margin: 10px 0;">
+      <b>Контакты:</b><br />
+      <a href="https://github.com/Anton2442">GitHub</a> • <a href="https://t.me/Kish242">Telegram</a>
+      </div>
+    </td>
+    <td align="center" style="border: 1px solid #555;">
+      <img src="https://github.com/dencraz.png" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
+      <b>Даниил Сапронов</b><br />
+      <sub><i>Frontend разработчик</i></sub>
+      <hr style="border: 1px solid #555; margin: 10px 0;">
+      <div align="left">
+      <b>Вклад в проект:</b><br />
+      • Frontend разработка<br />
+      • Концепт-арты<br />
+      • UI/UX дизайн
+      <hr style="border: 1px solid #555; margin: 10px 0;">
+      <b>Контакты:</b><br />
+      <a href="https://github.com/dencraz">GitHub</a> • <a href="https://t.me/dencraz">Telegram</a>
+      </div>
+    </td>
+    <td align="center" style="border: 1px solid #555;">
+      <img src="https://github.com/Xqyat.png" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
+      <b>Роман Колесников</b><br />
+      <sub><i>Frontend разработчик</i></sub>
+      <hr style="border: 1px solid #555; margin: 10px 0;">
+      <div align="left">
+      <b>Вклад в проект:</b><br />
+      • Frontend разработка<br />
+      • Концепт-арты<br />
+      • UI/UX дизайн
+      <hr style="border: 1px solid #555; margin: 10px 0;">
+      <b>Контакты:</b><br />
+      <a href="https://github.com/Xqyat">GitHub</a> • <a href="https://t.me/Forliot">Telegram</a>
+      </div>
+    </td>
+    <td align="center" style="border: 1px solid #555;">
+      <img src="https://sun2-18.userapi.com/s/v1/ig2/QOHM-ftoEZrQ7RfJuFUrKSX-xDVxbAP48ON55c7lWRZQ-5tMwn_j6DT18RVM-ct6oDko6IQG_nAe4BHedSZeLGXN.jpg?quality=95&crop=311,5,476,476&as=32x32,48x48,72x72,108x108,160x160,240x240,360x360&ava=1&u=mBJJIJHalMwlaWdHGeWQx12WYbz1vqaL3H3KEiae26o&cs=200x200" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
+      <b>Цызов Владимир</b><br />
+      <sub><i>Computer Vision разработчик</i></sub>
+      <hr style="border: 1px solid #555; margin: 10px 0;">
+      <div align="left">
+      <b>Вклад в проект:</b><br />
+      • Распознавание жестов<br />
+      • Подготовка презентации
+      <hr style="border: 1px solid #555; margin: 10px 0;">
+      <b>Контакты:</b><br />
+      <a href="https://github.com/Malanhei">GitHub</a> • <a href="https://t.me/malanhei">Telegram</a>
+      </div>
+    </td>
+  </tr>
+</table>
+
 ### Сделала команда **Fishing Team**
 #### Контакты и роли:
  - Штеренфельд Александр - **Team Lead, ML**, TG: @BeesKnights

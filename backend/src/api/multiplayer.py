@@ -74,7 +74,7 @@ async def multiplayer_endpoint(websocket: WebSocket):
                     start_msg = {"action": "battle_start", "duration": 10}
                     for p in match["players"]:
                         await p["websocket"].send_json(start_msg)
-                    # Запускаем асинхронное ожидание финальных gesture-сообщений
+                    # Запуск асинхронного ожидания финальных gesture-сообщений
                     asyncio.create_task(send_blackout_and_end(match, current_match_id))
             elif action == "unready":
                 for p in match["players"]:
@@ -156,7 +156,6 @@ def save_match_result(match, g1, g2, winner):
             result=resultValue
         )
         db.add(new_game)
-        # Обновляем онлайн-статистику для обоих игроков
         player1 = db.query(User).filter(User.id == player1_id).first()
         player2 = db.query(User).filter(User.id == player2_id).first()
         if player1:
