@@ -5,18 +5,40 @@
   <title>Игра: Камень-Ножницы-Бумага</title>
   <link rel="stylesheet" href="/css/game.css">
   <style>
+    /* Фон всей страницы */
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #a7c7e7, #b87fe2);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      height: 100vh;
+      position: relative;
+    }
+    /* Контейнер с видео-окнами (игрок и компьютер) */
     .game-container {
       display: flex;
+      flex-direction: row;
       justify-content: space-between;
       align-items: center;
-      position: relative;
+      background-color: #fff;
+      padding: 20px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      width: 90%;
+      max-width: 1100px;
+      margin-bottom: 20px;
     }
     .player-container {
       position: relative;
+      width: 640px;
+      height: 480px;
     }
+    /* Обновлённые размеры окна компьютера */
     .computer-container {
-      width: 200px; /* Размер окна компьютера */
-      height: 150px;
+      width: 600px;  /* Новая ширина окна компьютера */
+      height: 450px; /* Новая высота окна компьютера */
       border: 2px solid #ccc;
       display: flex;
       justify-content: center;
@@ -33,6 +55,51 @@
       top: 0;
       left: 0;
       pointer-events: none;
+    }
+    /* Нижняя панель с таймером, результатом и кнопкой "Играть" */
+    .bottom-box {
+      background-color: #fff;
+      padding: 10px 15px;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+      display: inline-block;
+      margin-top: -20px; /* Поднимаем немного вверх */
+      min-width: 300px;
+    }
+    .result-container {
+      text-align: center;
+      font-size: 18px;
+      margin-bottom: 10px;
+    }
+    /* Кнопка "Играть" */
+    #play-button {
+      padding: 8px 16px;
+      font-size: 16px;
+      background-color: #5c588a;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      display: block;
+      margin: 0 auto;
+    }
+    #play-button:hover {
+      background-color: #4e4873;
+    }
+    /* Кнопка "Профиль" */
+    .profile-btn {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      padding: 10px 20px;
+      background-color: #f44336;
+      color: white;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 16px;
+    }
+    .profile-btn:hover {
+      background-color: #e53935;
     }
   </style>
 </head>
@@ -55,14 +122,14 @@
     </div>
   </div>
 
-  <!-- Таймер и результат -->
-  <div class="result-container">
-    <p id="timer">Таймер: 00:03</p>
-    <p id="winner">Победитель: </p>
+  <!-- Нижняя панель с таймером, результатом и кнопкой "Играть" -->
+  <div class="bottom-box">
+    <div class="result-container">
+      <p id="timer">Таймер: 00:03</p>
+      <p id="winner">Победитель: </p>
+    </div>
+    <button id="play-button">Играть</button>
   </div>
-
-  <!-- Кнопка "Играть" -->
-  <button id="play-button">Играть</button>
 
   <script src="/JavaScript/game.js"></script>
 </body>

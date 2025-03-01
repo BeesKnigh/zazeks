@@ -5,21 +5,22 @@
     <title>Профиль</title>
     <link rel="stylesheet" href="/css/profile.css">
     <style>
-      /* Расположение кнопок в профиле */
+      /* Кнопка "Играть" (расположена слева сверху) */
       a.back-btn {
           position: absolute;
           top: 20px;
           left: 20px;
           padding: 10px 20px;
-          background-color: #f44336;
+          background-color: #5c588a;
           color: white;
           border-radius: 5px;
           text-decoration: none;
           font-size: 16px;
       }
       a.back-btn:hover {
-          background-color: #e53935;
+          background-color: #5c588a;
       }
+      /* Кнопка "Лидерборд" (расположена справа сверху) */
       a.leaderboard-btn {
           position: absolute;
           top: 20px;
@@ -34,11 +35,30 @@
       a.leaderboard-btn:hover {
           background-color: #4e4873;
       }
+      /* Новая кнопка "Мультиплеер" под кнопкой "Играть" */
+      a.multiplayer-btn {
+          position: absolute;
+          top: 60px; /* 20px (отступ верхней кнопки) + 40px (примерная высота кнопки с отступом) */
+          left: 20px;
+          padding: 10px 20px;
+          background-color: #5c588a;
+          color: white;
+          border-radius: 5px;
+          text-decoration: none;
+          font-size: 16px;
+      }
+      a.multiplayer-btn:hover {
+          background-color: #4e4873;
+      }
     </style>
 </head>
 <body>
+    <!-- Кнопка "Играть" -->
     <a href="game.html" class="back-btn">Играть</a>
+    <!-- Кнопка "Лидерборд" -->
     <a href="leaderboard.html" class="leaderboard-btn">Лидерборд</a>
+    <!-- Кнопка "Мультиплеер" под кнопкой "Играть" -->
+    <a href="multiplayer.html" class="multiplayer-btn">Мультиплеер</a>
     
     <div class="profile-container">
         <!-- Фото -->
