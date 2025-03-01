@@ -90,4 +90,4 @@
  - Штеренфельд Анна - **Frontend**, TG: @mbhopper
  - Землянский Максим - **Penistesting**, TG: @kusotsutar
 
-![alt text](frontend/images/placeholder.png)
+![alt text](image.png)
