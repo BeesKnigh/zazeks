@@ -9,17 +9,22 @@ waiting_players: List[Dict] = []  # Каждый элемент: { "user_id": st
 active_matches: Dict[str, dict] = {}  # Ключ: match_id, значение: { players, battle_started, gestures, play_again }
 
 def determine_result(gesture1: str, gesture2: str) -> str:
+    # Приводим оба жеста к нижнему регистру и убираем лишние пробелы
+    gesture1 = gesture1.strip().lower()
+    gesture2 = gesture2.strip().lower()
+    
     if gesture1 != "none" and gesture2 == "none":
         return "win"
     if gesture1 == "none" and gesture2 != "none":
         return "loss"
     if gesture1 == gesture2:
         return "draw"
-    if (gesture1 == "Rock" and gesture2 == "Scissors") or \
-            (gesture1 == "Scissors" and gesture2 == "Paper") or \
-            (gesture1 == "Paper" and gesture2 == "Rock"):
+    if (gesture1 == "rock" and gesture2 == "scissors") or \
+       (gesture1 == "scissors" and gesture2 == "paper") or \
+       (gesture1 == "paper" and gesture2 == "rock"):
         return "win"
     return "loss"
+
 
 
 @router.websocket("/ws/multiplayer")

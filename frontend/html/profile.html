@@ -35,10 +35,10 @@
       a.leaderboard-btn:hover {
           background-color: #4e4873;
       }
-      /* Новая кнопка "Мультиплеер" под кнопкой "Играть" */
+      /* Кнопка "Мультиплеер" под кнопкой "Играть" */
       a.multiplayer-btn {
           position: absolute;
-          top: 60px; /* 20px (отступ верхней кнопки) + 40px (примерная высота кнопки с отступом) */
+          top: 60px;
           left: 20px;
           padding: 10px 20px;
           background-color: #5c588a;
@@ -49,6 +49,11 @@
       }
       a.multiplayer-btn:hover {
           background-color: #4e4873;
+      }
+      /* Дополнительные стили для онлайн статистики */
+      .stats-online {
+          margin-top: 20px;
+          font-size: 18px;
       }
     </style>
 </head>
@@ -78,10 +83,16 @@
             </div>
         </div>
 
-        <!-- Статистика -->
+        <!-- Статистика оффлайн -->
         <div class="stats">
-            <p>Побед: <span id="wins">0</span></p>
-            <p>Игр сыграно: <span id="games-played">0</span></p>
+            <p>Побед (оффлайн): <span id="wins">0</span></p>
+            <p>Игр сыграно (оффлайн): <span id="games-played">0</span></p>
+        </div>
+
+        <!-- Статистика онлайн -->
+        <div class="stats-online">
+            <p>Побед (онлайн): <span id="online-wins">0</span></p>
+            <p>Игр сыграно (онлайн): <span id="online-games">0</span></p>
         </div>
     </div>
 

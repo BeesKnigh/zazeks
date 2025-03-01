@@ -1,3 +1,5 @@
+# src/api/user.py
+
 from fastapi import APIRouter, Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from pydantic import BaseModel
@@ -26,7 +28,7 @@ class UserProfile(BaseModel):
     """Схема для полного обновления профиля (с нуля)."""
     username: Optional[str] = None
     photo: Optional[str] = None
-    # Добавьте другие поля, если нужно обновлять больше данных
+    # Если нужно обновлять больше данных, можно добавить поля
 
 class PasswordChange(BaseModel):
     """Схема для смены пароля по логину."""
@@ -76,8 +78,8 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
 # Эндпоинты
 # ---------------------------
 
-@router.get("/leaderboard", summary="Получить лидерборд")
-def get_leaderboard(db: Session = Depends(get_db)):
+@router.get("/leaderboard/offline", summary="Получить оффлайн лидерборд (игры против бота)")
+def get_offline_leaderboard(db: Session = Depends(get_db)):
     users = db.query(User).order_by(User.wins.desc()).all()
     result = []
     for u in users:
@@ -85,6 +87,18 @@ def get_leaderboard(db: Session = Depends(get_db)):
             "username": u.username,
             "photo": u.photo,
             "wins": u.wins
+        })
+    return result
+
+@router.get("/leaderboard/online", summary="Получить онлайн лидерборд (игры против игроков)")
+def get_online_leaderboard(db: Session = Depends(get_db)):
+    users = db.query(User).order_by(User.online_wins.desc()).all()
+    result = []
+    for u in users:
+        result.append({
+            "username": u.username,
+            "photo": u.photo,
+            "online_wins": u.online_wins
         })
     return result
 
@@ -118,6 +132,8 @@ def get_user_by_id(
         "photo": user.photo,
         "wins": user.wins,
         "games_played": user.games_played,
+        "online_wins": user.online_wins,
+        "online_games": user.online_games,
     }
 
 @router.get("/{user_id}/avatar", summary="Получить аватар пользователя по ID")
@@ -137,10 +153,8 @@ def get_user_avatar(
         )
     return {"photo": user.photo}
 
-
 MAX_IMAGE_SIZE_MB = 5  # Максимальный размер 5MB
 ALLOWED_IMAGE_TYPES = {"jpeg", "png"}  # Разрешённые форматы
-
 
 @router.put("/{user_id}", summary="Полностью заменить профиль пользователя (PUT)")
 def update_user_profile(
@@ -151,7 +165,7 @@ def update_user_profile(
 ):
     """
     Полностью заменяет профиль пользователя (PUT), включая обновление фото.
-    По умолчанию разрешаем только самому пользователю (или администратору, если такое предусмотрено).
+    По умолчанию разрешаем только самому пользователю.
     Добавлены проверки:
     - Формат фото: только PNG или JPEG
     - Размер фото: не более 5MB
@@ -214,10 +228,13 @@ def update_user_profile(
         "user": {
             "id": user.id,
             "username": user.username,
-            "photo": user.photo
+            "photo": user.photo,
+            "wins": user.wins,
+            "games_played": user.games_played,
+            "online_wins": user.online_wins,
+            "online_games": user.online_games,
         }
     }
-
 
 @router.put("/change-password", summary="Изменить пароль по логину")
 def change_password(
@@ -227,10 +244,8 @@ def change_password(
 ):
     """
     Смена пароля по логину:
-    - Пользователь (или админ, если у вас есть такая логика)
-      может поменять пароль, зная старый пароль.
-    - Если текущий пользователь не совпадает с логином,
-      бросаем 403 (если нет admin-ролей).
+    - Пользователь (или админ) может поменять пароль, зная старый пароль.
+    - Если текущий пользователь не совпадает с логином, бросаем 403.
     """
     user = db.query(User).filter(User.username == data.login).first()
     if not user:
@@ -239,23 +254,18 @@ def change_password(
             detail="User not found"
         )
 
-    # Проверка прав: если текущий пользователь != data.login
-    # (и при условии, что у нас нет понятия admin),
-    # то запрещаем смену пароля:
     if current_user.username != data.login:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough privileges"
         )
 
-    # Проверяем старый пароль
     if not verify_password(data.old_password, user.password_hash):
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid old password"
         )
 
-    # Устанавливаем новый пароль
     user.password_hash = get_password_hash(data.new_password)
     db.commit()
     db.refresh(user)
