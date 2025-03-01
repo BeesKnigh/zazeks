@@ -38,7 +38,6 @@ document.addEventListener('DOMContentLoaded', () => {
         usernameCell.textContent = user.username;
 
         const winsCell = document.createElement('td');
-        // Если тип оффлайн, отображаем поле wins, если онлайн – online_wins
         winsCell.textContent = type === 'offline' ? user.wins : user.online_wins;
 
         row.appendChild(photoCell);
@@ -53,7 +52,6 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   }
 
-  // Загружаем оффлайн лидерборд по умолчанию
   loadLeaderboard('offline');
 
   offlineBtn.addEventListener('click', () => {

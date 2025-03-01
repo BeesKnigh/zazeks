@@ -4,7 +4,7 @@ body {
     margin: 0;
     padding: 0;
     height: 100vh;
-    background: linear-gradient(135deg, #a7c7e7, #b87fe2); /* Градиентный фон */
+    background: linear-gradient(135deg, #a7c7e7, #b87fe2);
     display: flex;
     justify-content: center;
     align-items: flex-start;
@@ -112,6 +112,12 @@ a.back-btn:hover {
 
 .confirm-btn:hover {
     background-color: #4e4873;
+}
+
+/* Статистика */
+.stats p {
+    font-size: 18px;
+    margin: 10px 0;
 }
 
 /* Лидерборд */

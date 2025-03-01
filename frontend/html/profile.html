@@ -1,101 +1,156 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="UTF-8">
-    <title>Профиль</title>
-    <link rel="stylesheet" href="/css/profile.css">
-    <style>
-      /* Кнопка "Играть" (расположена слева сверху) */
-      a.back-btn {
-          position: absolute;
-          top: 20px;
-          left: 20px;
-          padding: 10px 20px;
-          background-color: #5c588a;
-          color: white;
-          border-radius: 5px;
-          text-decoration: none;
-          font-size: 16px;
-      }
-      a.back-btn:hover {
-          background-color: #5c588a;
-      }
-      /* Кнопка "Лидерборд" (расположена справа сверху) */
-      a.leaderboard-btn {
-          position: absolute;
-          top: 20px;
-          right: 20px;
-          padding: 10px 20px;
-          background-color: #5c588a;
-          color: white;
-          border-radius: 5px;
-          text-decoration: none;
-          font-size: 16px;
-      }
-      a.leaderboard-btn:hover {
-          background-color: #4e4873;
-      }
-      /* Кнопка "Мультиплеер" под кнопкой "Играть" */
-      a.multiplayer-btn {
-          position: absolute;
-          top: 60px;
-          left: 20px;
-          padding: 10px 20px;
-          background-color: #5c588a;
-          color: white;
-          border-radius: 5px;
-          text-decoration: none;
-          font-size: 16px;
-      }
-      a.multiplayer-btn:hover {
-          background-color: #4e4873;
-      }
-      /* Дополнительные стили для онлайн статистики */
-      .stats-online {
-          margin-top: 20px;
-          font-size: 18px;
-      }
-    </style>
+  <meta charset="UTF-8">
+  <title>Профиль</title>
+  <link rel="stylesheet" href="/css/profile.css">
+  <style>
+    /* Общие стили для страницы */
+    body {
+      margin: 0;
+      padding: 0;
+      background: linear-gradient(135deg, #a7c7e7, #b87fe2);
+      font-family: Arial, sans-serif;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+    }
+    /* Основной контейнер профиля */
+    .profile-container {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      max-width: 600px;
+      width: 90%;
+      text-align: center;
+      margin-top: 20px;
+    }
+    /* Стили для фото профиля */
+    .profile-photo img {
+      width: 150px;
+      height: 150px;
+      border-radius: 50%;
+    }
+    .change-photo-btn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #5c588a;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .change-photo-btn:hover {
+      background-color: #4e4873;
+    }
+    /* Стили для никнейма */
+    .nickname {
+      margin: 20px 0;
+    }
+    .nickname h2 {
+      margin: 0;
+      font-size: 24px;
+    }
+    .edit-nickname-btn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #5c588a;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .edit-nickname-btn:hover {
+      background-color: #4e4873;
+    }
+    #nickname-input-container {
+      margin-top: 10px;
+      display: none;
+    }
+    .confirm-btn {
+      margin-top: 10px;
+      padding: 10px 20px;
+      background-color: #5c588a;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    .confirm-btn:hover {
+      background-color: #4e4873;
+    }
+    /* Стили для статистики */
+    .stats p {
+      font-size: 18px;
+      margin: 10px 0;
+    }
+    /* Контейнер для кнопок навигации, расположенный ниже основного окна */
+    .navigation-box {
+      background: #fff;
+      border-radius: 10px;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+      padding: 20px;
+      max-width: 600px;
+      width: 90%;
+      text-align: center;
+      margin-top: 20px;
+    }
+    .nav-buttons {
+      display: flex;
+      justify-content: space-around;
+    }
+    .nav-buttons a {
+      padding: 10px 20px;
+      background-color: #5c588a;
+      color: #fff;
+      border-radius: 5px;
+      text-decoration: none;
+      font-size: 16px;
+    }
+    .nav-buttons a:hover {
+      background-color: #4e4873;
+    }
+  </style>
 </head>
 <body>
-    <!-- Кнопка "Играть" -->
-    <a href="game.html" class="back-btn">Играть</a>
-    <!-- Кнопка "Лидерборд" -->
-    <a href="leaderboard.html" class="leaderboard-btn">Лидерборд</a>
-    <!-- Кнопка "Мультиплеер" под кнопкой "Играть" -->
-    <a href="multiplayer.html" class="multiplayer-btn">Мультиплеер</a>
-    
-    <div class="profile-container">
-        <!-- Фото -->
-        <div class="profile-photo">
-            <img src="/images/default-avatar.jpg" alt="Фото профиля" id="profile-pic">
-            <input type="file" id="profile-pic-input" accept="image/*" style="display:none">
-            <button class="change-photo-btn" id="change-photo-btn">Сменить фото</button>
-        </div>
-
-        <!-- Никнейм -->
-        <div class="nickname">
-            <h2 id="nickname"></h2>
-            <button class="edit-nickname-btn" id="edit-nickname-btn">Изменить никнейм</button>
-            <div id="nickname-input-container" style="display: none;">
-                <input type="text" id="new-nickname" placeholder="Введите новый никнейм">
-                <button class="confirm-btn" id="confirm-nickname-btn">Подтвердить</button>
-            </div>
-        </div>
-
-        <!-- Статистика оффлайн -->
-        <div class="stats">
-            <p>Побед (оффлайн): <span id="wins">0</span></p>
-            <p>Игр сыграно (оффлайн): <span id="games-played">0</span></p>
-        </div>
-
-        <!-- Статистика онлайн -->
-        <div class="stats-online">
-            <p>Побед (онлайн): <span id="online-wins">0</span></p>
-            <p>Игр сыграно (онлайн): <span id="online-games">0</span></p>
-        </div>
+  <div class="profile-container">
+    <!-- Фото профиля -->
+    <div class="profile-photo">
+      <img src="/images/default-avatar.jpg" alt="Фото профиля" id="profile-pic">
+      <input type="file" id="profile-pic-input" accept="image/*" style="display:none">
+      <button class="change-photo-btn" id="change-photo-btn">Сменить фото</button>
     </div>
 
-    <script src="/JavaScript/profile.js"></script>
+    <!-- Никнейм -->
+    <div class="nickname">
+      <h2 id="nickname">Ваш Никнейм</h2>
+      <button class="edit-nickname-btn" id="edit-nickname-btn">Изменить никнейм</button>
+      <div id="nickname-input-container">
+        <input type="text" id="new-nickname" placeholder="Введите новый никнейм">
+        <button class="confirm-btn" id="confirm-nickname-btn">Подтвердить</button>
+      </div>
+    </div>
+
+    <!-- Статистика -->
+    <div class="stats">
+      <p>Оффлайн Побед: <span id="wins">0</span></p>
+      <p>Оффлайн Игр сыграно: <span id="games-played">0</span></p>
+      <p>Онлайн Побед: <span id="online-wins">0</span></p>
+      <p>Онлайн Игр сыграно: <span id="online-games">0</span></p>
+    </div>
+  </div>
+
+  <!-- Окошко с кнопками навигации -->
+  <div class="navigation-box">
+    <div class="nav-buttons">
+      <a href="game.html">Играть</a>
+      <a href="multiplayer.html">Мультиплеер</a>
+      <a href="leaderboard.html">Лидерборд</a>
+    </div>
+  </div>
+
+  <script src="/JavaScript/profile.js"></script>
 </body>
 </html>

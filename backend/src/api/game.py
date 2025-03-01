@@ -5,7 +5,7 @@ from sqlalchemy.orm import Session
 
 from src.database.session import get_db
 from src.database.models import User, Game
-from src.api.user import get_current_user  # или ваш метод получения текущего пользователя
+from src.api.user import get_current_user
 
 router = APIRouter()
 
@@ -32,18 +32,18 @@ class GameResponse(BaseModel):
 
 @router.post("/", response_model=GameResponse, summary="Сохранить игру в историю")
 def create_game(
-        game_data: GameCreate,
-        db: Session = Depends(get_db),
-        current_user: User = Depends(get_current_user)
+    game_data: GameCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
 ):
     """
     Сохраняет информацию об одной сыгранной игре.
-    Также обновляет статистику пользователя (games_played, wins).
+    Также обновляет статистику пользователя (games_played, wins) и
+    предотвращает повторную отправку одинаковых данных в короткий промежуток времени.
     """
+    print(f"Received game data: {game_data}")
 
-    print(f"Received game data: {game_data}")  # Логируем входные данные
-
-    # Переводим результат в ожидаемый формат (если пришёл на русском)
+    # Перевод результата, если пришёл на русском
     result_translation = {
         "win": "win",
         "loss": "loss",
@@ -52,13 +52,29 @@ def create_game(
         "поражение": "loss",
         "ничья": "draw"
     }
+    game_result = game_data.result.lower().strip()
+    game_result = result_translation.get(game_result, game_result)
+    print(f"Translated Game result: {game_result}")
 
-    game_result = game_data.result.lower().strip()  # Приводим к нижнему регистру
-    game_result = result_translation.get(game_result, game_result)  # Если найден перевод, применяем его
+    # Проверка уникальности игровой сессии: не допускаем повторной отправки одинаковых данных
+    # в течение заданного порога (например, 10 секунд).
+    DUPLICATE_THRESHOLD_SECONDS = 10
+    from datetime import datetime, timedelta
+    now = datetime.utcnow()
+    duplicate_game = db.query(Game).filter(
+        Game.user_id == current_user.id,
+        Game.user_choice == game_data.user_choice,
+        Game.computer_choice == game_data.computer_choice,
+        Game.result == game_result,
+        Game.timestamp >= now - timedelta(seconds=DUPLICATE_THRESHOLD_SECONDS)
+    ).first()
 
-    print(f"Translated Game result: {game_result}")  # Проверяем, что теперь передаётся
+    if duplicate_game:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Duplicate game submission detected. Please wait before submitting again."
+        )
 
-    # Создаем запись об игре
     new_game = Game(
         user_id=current_user.id,
         user_choice=game_data.user_choice,
@@ -68,19 +84,18 @@ def create_game(
     db.add(new_game)
 
     user = db.query(User).filter(User.id == current_user.id).first()
-
     user.games_played += 1
-
-    if game_result == "win":  # Теперь проверка точно сработает
+    if game_result == "win":
         print(f"Adding win for user {user.username}")
         user.wins += 1
 
-    db.flush()  # Принудительно отправляем изменения
+    db.flush()
     db.commit()
     db.refresh(new_game)
     db.refresh(user)
 
     return new_game
+
 
 
 @router.get("/{game_id}", response_model=GameResponse, summary="Получить игру по ID")
@@ -97,8 +112,6 @@ def get_game_by_id(
     if not game:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Game not found")
 
-    # Если вы хотите запретить другим пользователям смотреть чужие игры,
-    # можно добавить проверку
     if game.user_id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough privileges")
 
@@ -116,8 +129,6 @@ def get_all_games_for_user(
     Если нужно, проверяем права: либо сам пользователь, либо админ.
     """
     if current_user.id != user_id:
-        # Можно дополнительно проверить, есть ли у current_user роль "admin"
-        # Для простоты примера бросаем 403
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough privileges")
 
     games = db.query(Game).filter(Game.user_id == user_id).all()
@@ -136,8 +147,7 @@ def add_win(
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
-    # Проверка прав - например, только сам пользователь или администратор может это делать
+    
     if user.id != current_user.id:
         raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Not enough privileges")
 

@@ -1,6 +1,5 @@
 document.addEventListener('DOMContentLoaded', async () => {
   const backendUrl = window.location.origin;
-
   const token = localStorage.getItem('accessToken');
   if (!token) {
     alert('Пожалуйста, войдите в систему');
@@ -35,12 +34,17 @@ document.addEventListener('DOMContentLoaded', async () => {
     const userData = await response.json();
     console.log('Профиль пользователя:', userData);
 
+    // Обновление никнейма и фото
     document.getElementById('nickname').innerText = userData.username;
     if (userData.photo) {
       document.getElementById('profile-pic').src = userData.photo;
     }
-    document.getElementById('wins').innerText = userData.wins;
-    document.getElementById('games-played').innerText = userData.games_played;
+    // Оффлайн статистика
+    document.getElementById('wins').innerText = userData.wins || 0;
+    document.getElementById('games-played').innerText = userData.games_played || 0;
+    // Онлайн статистика
+    document.getElementById('online-wins').innerText = userData.online_wins || 0;
+    document.getElementById('online-games').innerText = userData.online_games || 0;
 
   } catch (err) {
     console.error(err);
@@ -49,6 +53,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     return;
   }
 
+  // Обработчики изменения никнейма
   const editNicknameBtn = document.getElementById('edit-nickname-btn');
   const nicknameInputContainer = document.getElementById('nickname-input-container');
   const confirmNicknameBtn = document.getElementById('confirm-nickname-btn');
@@ -81,17 +86,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
       const data = await response.json();
       console.log('Никнейм обновлён:', data);
-
       document.getElementById('nickname').innerText = newNickname;
       nicknameInputContainer.style.display = 'none';
       newNicknameInput.value = '';
-
     } catch (err) {
       console.error(err);
       alert('Ошибка при обновлении никнейма');
     }
   });
 
+  // Обработчики смены фото профиля
   const changePhotoBtn = document.getElementById('change-photo-btn');
   const profilePicInput = document.getElementById('profile-pic-input');
   const profilePic = document.getElementById('profile-pic');
@@ -103,12 +107,10 @@ document.addEventListener('DOMContentLoaded', async () => {
   profilePicInput.addEventListener('change', async () => {
     const file = profilePicInput.files[0];
     if (!file) return;
-
     const reader = new FileReader();
     reader.onload = async (e) => {
-      const base64URL = e.target.result; // data:image/png;base64,....
+      const base64URL = e.target.result;
       console.log('Изображение в base64:', base64URL);
-
       try {
         const response = await fetch(`${backendUrl}/user/${user_id}`, {
           method: 'PUT',
@@ -118,16 +120,12 @@ document.addEventListener('DOMContentLoaded', async () => {
           },
           body: JSON.stringify({ photo: base64URL })
         });
-
         if (!response.ok) {
           throw new Error('Ошибка при обновлении фото');
         }
-
         const data = await response.json();
         console.log('Фото обновлено:', data);
-
         profilePic.src = base64URL;
-
       } catch (err) {
         console.error(err);
         alert('Ошибка при обновлении фото');

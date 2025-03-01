@@ -171,8 +171,7 @@ def update_user_profile(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="User not found"
         )
-
-    # Проверяем, может ли текущий пользователь обновлять этот профиль
+    
     if current_user.id != user_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
@@ -184,9 +183,7 @@ def update_user_profile(
         try:
             # Убираем "data:image/png;base64," из строки base64
             header, encoded = user_data.photo.split(",", 1)
-            # Декодируем base64
             decoded_img = base64.b64decode(encoded)
-            # Проверяем размер (в байтах)
             if len(decoded_img) > MAX_IMAGE_SIZE_MB * 1024 * 1024:
                 raise HTTPException(
                     status_code=status.HTTP_400_BAD_REQUEST,
@@ -207,7 +204,6 @@ def update_user_profile(
                 detail="Invalid image format"
             )
 
-    # Обновляем другие данные, если переданы
     if user_data.username is not None:
         user.username = user_data.username
 

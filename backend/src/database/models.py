@@ -13,17 +13,13 @@ class User(Base):
     wins = Column(Integer, default=0)
     games_played = Column(Integer, default=0)
     
-    # Новые поля для онлайн статистики
     online_wins = Column(Integer, default=0)
     online_games = Column(Integer, default=0)
 
-    # Связь с историей оффлайн игр
     games = relationship("Game", back_populates="user", cascade="all, delete-orphan")
 
-    # Связь с админской записью (если есть)
     admin = relationship("Admin", back_populates="user", uselist=False)
 
-    # Связи с онлайн матчами: когда пользователь является игроком 1 или игроком 2
     multiplayer_games_as_player1 = relationship("MultiplayerGame", foreign_keys="[MultiplayerGame.player1_id]", back_populates="player1")
     multiplayer_games_as_player2 = relationship("MultiplayerGame", foreign_keys="[MultiplayerGame.player2_id]", back_populates="player2")
 
@@ -50,7 +46,6 @@ class Admin(Base):
     id = Column(Integer, primary_key=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
 
-    # Связь с моделью User
     user = relationship("User", back_populates="admin")
 
 

@@ -60,7 +60,6 @@ def login(user_data: UserLogin, db: Session = Depends(get_db)):
             detail="Invalid username or password"
         )
     access_token_expires = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    # Используем user.id в качестве subject (приводим к строке)
     access_token = create_access_token(
         data={"sub": str(user.id)},
         expires_delta=access_token_expires
