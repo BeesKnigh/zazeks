@@ -18,7 +18,7 @@ const localVideo = document.getElementById("localVideo");
 const remoteVideo = document.getElementById("remoteVideo");
 const blackoutOverlay = document.getElementById("blackoutOverlay");
 
-// Создаем canvas-оверлей для отрисовки рамок
+// Создаем canvas для рамок
 const overlayCanvas = document.createElement('canvas');
 overlayCanvas.style.position = 'absolute';
 overlayCanvas.style.pointerEvents = 'none';
@@ -33,14 +33,10 @@ let gestureScanInterval;
 let battleDuration = 10; // секунд
 let battleTimer = battleDuration;
 let finalGesture = "none"; // итоговый жест
-
-// Переменная для хранения последнего корректно распознанного жеста
-let lastValidGesture = "none";
-
-// Глобальная переменная для хранения идентификаторов игроков матча
+let lastValidGesture = "none"; // сохраняет последний корректный жест
 let currentMatchPlayers = [];
-// Флаг для предотвращения множественного сохранения результата матча
-let resultSaved = false;
+// Клиент теперь не сохраняет результат – сервер делает сохранение
+let latestBattleEnd = null; // для хранения последнего сообщения battle_end
 
 const backendUrl = window.location.origin;
 const wsUrl = (window.location.protocol === 'https:' ? 'wss://' : 'ws://') + window.location.host + '/ws/multiplayer';
@@ -66,9 +62,7 @@ async function detectGesture() {
       const tempCtx = tempCanvas.getContext('2d');
       tempCtx.drawImage(localVideo, 0, 0, width, height);
       tempCanvas.toBlob(async (blob) => {
-        if (!blob) {
-          return reject("Ошибка преобразования кадра в Blob");
-        }
+        if (!blob) return reject("Ошибка преобразования кадра в Blob");
         const formData = new FormData();
         formData.append('file', blob, 'frame.jpg');
         try {
@@ -77,26 +71,14 @@ async function detectGesture() {
             headers: { 'Authorization': `Bearer ${token}` },
             body: formData
           });
-          if (!response.ok) {
-            return reject(`Ошибка детекции: ${response.status}`);
-          }
+          if (!response.ok) return reject(`Ошибка детекции: ${response.status}`);
           const data = await response.json();
           let detected = data.gesture === "No detection" ? "none" : data.gesture;
-          // Если обнаружен корректный жест, обновляем lastValidGesture
-          if (detected !== "none") {
-            lastValidGesture = detected;
-          }
-          resolve({
-            gesture: detected,
-            bbox: data.bbox
-          });
-        } catch (err) {
-          reject(err);
-        }
+          if (detected !== "none") lastValidGesture = detected;
+          resolve({ gesture: detected, bbox: data.bbox });
+        } catch (err) { reject(err); }
       }, 'image/jpeg');
-    } catch (e) {
-      reject(e);
-    }
+    } catch (e) { reject(e); }
   });
 }
 
@@ -117,14 +99,10 @@ function drawBoundingBox(bbox) {
 
 function connectWebSocket() {
   ws = new WebSocket(wsUrl);
-
   ws.onopen = () => {
     statusDiv.innerText = "Подключено к серверу. Ожидание очереди...";
-    // Сбрасываем флаг сохранения результата при новом подключении
-    resultSaved = false;
-    ws.send(JSON.stringify({ action: "join", user_id: user_id }));
+    ws.send(JSON.stringify({ action: "join", user_id }));
   };
-
   ws.onmessage = (event) => {
     const msg = JSON.parse(event.data);
     console.log("Получено:", msg);
@@ -136,16 +114,11 @@ function connectWebSocket() {
         statusDiv.innerText = "Матч найден! Игроки: " + msg.players.join(", ");
         readyBtn.style.display = "inline-block";
         unreadyBtn.style.display = "inline-block";
-        // Сохраняем идентификаторы игроков для дальнейшего сохранения матча
         currentMatchPlayers = msg.players;
-        // Сбрасываем флаг сохранения результата при новом матче
-        resultSaved = false;
         initPeerConnection(msg.match_id);
         break;
       case "signal":
-        if (peer) {
-          peer.signal(msg.data);
-        }
+        if (peer) peer.signal(msg.data);
         break;
       case "battle_start":
         statusDiv.innerText = "Битва начинается!";
@@ -155,27 +128,17 @@ function connectWebSocket() {
       case "blackout":
         statusDiv.innerText = "Последние секунды битвы: экран противника затемняется.";
         blackoutOverlay.style.opacity = 1;
-        setTimeout(() => {
-          blackoutOverlay.style.opacity = 0;
-        }, msg.duration * 1000);
+        setTimeout(() => { blackoutOverlay.style.opacity = 0; }, msg.duration * 1000);
         break;
       case "battle_end":
-        // Если жест, полученный от сервера, равен "none" для текущего игрока и у нас есть последний валидный жест,
-        // подставляем его.
-        if (msg.gestures[user_id] === "none" && lastValidGesture !== "none") {
-          msg.gestures[user_id] = lastValidGesture;
-        }
+        latestBattleEnd = msg;
+        // Сервер уже подставил корректные значения
         statusDiv.innerText = "Битва окончена!";
-        resultDiv.innerText = `Победитель: ${msg.winner}\nВаш жест: ${msg.gestures[user_id]}\nЖест противника: ${getOpponentGesture(msg.gestures)}`;
+        resultDiv.innerText = `Победитель: ${msg.winner}\nВаш жест: ${msg.gestures[user_id]}\nЖест противника: ${getOpponentGesture(msg.gestures)}\nGame ID: ${msg.game_id || 'N/A'}`;
         clearInterval(battleCountdownInterval);
         clearInterval(gestureScanInterval);
         playAgainBtn.style.display = "inline-block";
         overlayCtx.clearRect(0, 0, overlayCanvas.width, overlayCanvas.height);
-        // Сохраняем результат только если текущий клиент является инициатором (первым игроком)
-        if (parseInt(user_id) === parseInt(currentMatchPlayers[0]) && !resultSaved) {
-          saveMultiplayerResult(msg.gestures, msg.winner);
-          resultSaved = true;
-        }
         break;
       case "player_unready":
         statusDiv.innerText = "Один из игроков отменил готовность.";
@@ -185,8 +148,6 @@ function connectWebSocket() {
         readyBtn.disabled = false;
         unreadyBtn.disabled = false;
         playAgainBtn.style.display = "none";
-        // Сбрасываем флаг для нового матча
-        resultSaved = false;
         break;
       case "opponent_play_again":
         statusDiv.innerText = msg.message;
@@ -198,14 +159,8 @@ function connectWebSocket() {
         console.log("Неизвестное действие:", msg);
     }
   };
-
-  ws.onclose = () => {
-    statusDiv.innerText = "Соединение закрыто.";
-  };
-
-  ws.onerror = (err) => {
-    console.error("Ошибка WebSocket:", err);
-  };
+  ws.onclose = () => { statusDiv.innerText = "Соединение закрыто."; };
+  ws.onerror = (err) => { console.error("Ошибка WebSocket:", err); };
 }
 
 function initPeerConnection(match_id) {
@@ -221,22 +176,11 @@ function initPeerConnection(match_id) {
         stream: localStream,
         config: { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] }
       });
-
-      peer.on('signal', data => {
-        ws.send(JSON.stringify({ action: "signal", data: data }));
-      });
-
-      peer.on('stream', stream => {
-        remoteVideo.srcObject = stream;
-      });
-
-      peer.on('error', err => {
-        console.error("Ошибка в SimplePeer:", err);
-      });
+      peer.on('signal', data => { ws.send(JSON.stringify({ action: "signal", data })); });
+      peer.on('stream', stream => { remoteVideo.srcObject = stream; });
+      peer.on('error', err => { console.error("Ошибка в SimplePeer:", err); });
     })
-    .catch(err => {
-      console.error("Ошибка получения видеопотока:", err);
-    });
+    .catch(err => { console.error("Ошибка получения видеопотока:", err); });
 }
 
 function getOpponentGesture(gestures) {
@@ -247,13 +191,13 @@ function getOpponentGesture(gestures) {
 }
 
 readyBtn.addEventListener("click", () => {
-  ws.send(JSON.stringify({ action: "ready", user_id: user_id }));
+  ws.send(JSON.stringify({ action: "ready", user_id }));
   readyBtn.disabled = true;
   unreadyBtn.disabled = false;
 });
 
 unreadyBtn.addEventListener("click", () => {
-  ws.send(JSON.stringify({ action: "unready", user_id: user_id }));
+  ws.send(JSON.stringify({ action: "unready", user_id }));
   readyBtn.disabled = false;
   unreadyBtn.disabled = true;
 });
@@ -261,30 +205,39 @@ unreadyBtn.addEventListener("click", () => {
 function startBattle() {
   battleTimer = battleDuration;
   battleTimerDiv.innerText = `Битва: ${battleTimer} сек`;
-
   battleCountdownInterval = setInterval(() => {
     battleTimer--;
     battleTimerDiv.innerText = `Битва: ${battleTimer} сек`;
     if (battleTimer <= 0) {
       clearInterval(battleCountdownInterval);
       clearInterval(gestureScanInterval);
-      // Проводим финальную детекцию
       detectGesture().then((detection) => {
-        finalGesture = (detection.gesture === "none" && lastValidGesture !== "none") ? lastValidGesture : detection.gesture;
-        ws.send(JSON.stringify({ action: "gesture", gesture: finalGesture, user_id: user_id }));
+        finalGesture = (detection.gesture === "none" && lastValidGesture !== "none")
+          ? lastValidGesture
+          : detection.gesture;
+        console.log("Sending final gesture:", finalGesture);
+        ws.send(JSON.stringify({ 
+          action: "gesture", 
+          gesture: finalGesture, 
+          lastValidGesture: lastValidGesture, 
+          user_id 
+        }));
       }).catch(err => {
         console.error("Ошибка финальной детекции:", err);
-        ws.send(JSON.stringify({ action: "gesture", gesture: finalGesture, user_id: user_id }));
+        console.log("Sending final gesture (with error):", finalGesture);
+        ws.send(JSON.stringify({ 
+          action: "gesture", 
+          gesture: finalGesture, 
+          lastValidGesture: lastValidGesture, 
+          user_id 
+        }));
       });
     }
   }, 1000);
-
   gestureScanInterval = setInterval(async () => {
     try {
       const detection = await detectGesture();
-      if (detection.gesture !== "none") {
-        lastValidGesture = detection.gesture;
-      }
+      if (detection.gesture !== "none") lastValidGesture = detection.gesture;
       finalGesture = detection.gesture;
       drawBoundingBox(detection.bbox);
       console.log("Детекция:", detection);
@@ -298,48 +251,11 @@ joinQueueBtn.addEventListener("click", () => {
   if (!ws || ws.readyState !== WebSocket.OPEN) {
     connectWebSocket();
   } else {
-    ws.send(JSON.stringify({ action: "join", user_id: user_id }));
+    ws.send(JSON.stringify({ action: "join", user_id }));
   }
 });
 
 playAgainBtn.addEventListener("click", () => {
   playAgainBtn.style.display = "none";
-  ws.send(JSON.stringify({ action: "play_again", user_id: user_id }));
+  ws.send(JSON.stringify({ action: "play_again", user_id }));
 });
-
-// Функция для сохранения результатов онлайн матча через API
-async function saveMultiplayerResult(gestures, winner) {
-  if (!currentMatchPlayers || currentMatchPlayers.length < 2) {
-    console.error("Недостаточно данных о матче для сохранения результата.");
-    return;
-  }
-  const resultValue = (winner === "draw") 
-    ? "draw" 
-    : (parseInt(winner) === parseInt(currentMatchPlayers[0]) ? "player1" : "player2");
-  const payload = {
-    player1_id: parseInt(currentMatchPlayers[0]),
-    player2_id: parseInt(currentMatchPlayers[1]),
-    player1_gesture: gestures[currentMatchPlayers[0]].toLowerCase(),
-    player2_gesture: gestures[currentMatchPlayers[1]].toLowerCase(),
-    result: resultValue
-  };
-  
-  try {
-    const response = await fetch(`${backendUrl}/multiplayer/result`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(payload)
-    });
-    if (!response.ok) {
-      console.error("Ошибка сохранения результата матча");
-    } else {
-      const data = await response.json();
-      console.log("Результат матча сохранён:", data);
-    }
-  } catch (err) {
-    console.error("Ошибка при сохранении результата матча:", err);
-  }
-}
