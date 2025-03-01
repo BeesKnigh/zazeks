@@ -87,7 +87,7 @@
 <table>
   <tr>
     <td align="center" style="border: 1px solid #555;">
-      <img src="pics_readme/Tamponi.jpg" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
+      <img src="defay_1x9/pics_readme/Tamponi.jpg" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
       <b>Александр Штеренфельд</b><br />
       <sub><i>Тимлид, ML Developer ,Full-stack разработчик</i></sub>
       <hr style="border: 1px solid #555; margin: 10px 0;">
@@ -102,7 +102,7 @@
       </div>
     </td>
     <td align="center" style="border: 1px solid #555;">
-      <img src="pics_readme/dafay_1x9.jpg" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
+      <img src="defay_1x9/pics_readme/dafay_1x9.jpg" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
       <b>Денис Байрамов</b><br />
       <sub><i>Backend разработчик</i></sub>
       <hr style="border: 1px solid #555; margin: 10px 0;">
@@ -116,7 +116,7 @@
       </div>
     </td>
     <td align="center" style="border: 1px solid #555;">
-      <img src="pics_readme/Anchous.jpg" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
+      <img src="defay_1x9/pics_readme/Anchous.jpg" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
       <b>Анна Штеренфельд</b><br />
       <sub><i>Frontend разработчик</i></sub>
       <hr style="border: 1px solid #555; margin: 10px 0;">
@@ -131,7 +131,7 @@
       </div>
     </td>
     <td align="center" style="border: 1px solid #555;">
-      <img src="pics_readme/Gitler_prime.jpg" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
+      <img src="defay_1x9/pics_readme/Gitler_prime.jpg" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
       <b>Максим Землянский</b><br />
       <sub><i>Pintester</i></sub>
       <hr style="border: 1px solid #555; margin: 10px 0;">
@@ -145,7 +145,7 @@
       </div>
     </td>
     <td align="center" style="border: 1px solid #555;">
-      <img src="pics_readme/artem228.jpg" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
+      <img src="defay_1x9/pics_readme/artem228.jpg" width="100" height="100" style="border-radius: 50%" alt="avatar"><br />
       <b>Артём Абдюков</b><br />
       <sub><i>Backend разработчик</i></sub>
       <hr style="border: 1px solid #555; margin: 10px 0;">
