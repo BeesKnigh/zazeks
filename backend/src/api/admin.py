@@ -1,14 +1,13 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, Body
 from sqlalchemy.orm import Session
+from pydantic import BaseModel
+import jwt
 
 from src.database.session import get_db
-from src.database.models import User, Admin
+from src.database.models import User, Admin, MultiplayerGame  # Обратите внимание, импортируем MultiplayerGame
 from src.security import verify_password, get_password_hash
 from src.config import settings
-
-# Для аутентификации
 from fastapi.security import OAuth2PasswordBearer
-import jwt
 
 router = APIRouter()
 
@@ -16,15 +15,10 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/auth/login")
 
 
 def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)) -> Admin:
-    """
-    Извлекает из JWT токена username,
-    проверяет, есть ли у этого пользователя запись в таблице Admin.
-    Если нет, выбрасывает 403.
-    """
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        username: str = payload.get("sub")
-        if not username:
+        user_id = payload.get("sub")  # sub содержит ID пользователя
+        if not user_id:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
                 detail="Invalid token payload",
@@ -40,55 +34,76 @@ def get_current_admin(token: str = Depends(oauth2_scheme), db: Session = Depends
             detail="Could not validate token",
         )
 
-    user = db.query(User).filter(User.username == username).first()
+    user = db.query(User).filter(User.id == int(user_id)).first()
     if not user:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="User not found",
         )
-    # Проверяем, есть ли запись в Admin
     if not user.admin:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Not enough privileges",
         )
-    return user.admin  # возвращаем объект Admin
+    return user.admin
 
 
-# ---------------- ЭНДПОИНТЫ ----------------
+class AdminCreate(BaseModel):
+    user_id: int
+
+
+class UsernameChange(BaseModel):
+    new_username: str
+
 
 @router.delete("/users/{user_id}", summary="Удаление пользователя по ID")
 def delete_user(
     user_id: int,
     db: Session = Depends(get_db),
-    admin: Admin = Depends(get_current_admin)
+    current_admin: Admin = Depends(get_current_admin)
 ):
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Если пользователь имеет админские права, удаление запрещено до их отзыва
+    if user.admin:
+        raise HTTPException(status_code=400, detail="Cannot delete admin user without revoking admin rights")
+    
+    # Удаляем все записи из таблицы MultiplayerGame, где пользователь фигурирует как player1 или player2
+    games_player1 = db.query(MultiplayerGame).filter(MultiplayerGame.player1_id == user_id).all()
+    for game in games_player1:
+        db.delete(game)
+    
+    games_player2 = db.query(MultiplayerGame).filter(MultiplayerGame.player2_id == user_id).all()
+    for game in games_player2:
+        db.delete(game)
+    
+    # Если существуют иные связанные таблицы, добавьте удаление соответствующих записей здесь
 
+    # Удаляем самого пользователя
     db.delete(user)
-    db.commit()
+    try:
+        db.commit()
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Error deleting user: {str(e)}")
+    
     return {"msg": f"User {user_id} deleted successfully"}
 
 
 @router.post("/admins", summary="Добавить пользователя в таблицу админов")
 def add_admin(
-    user_id: int,
+    admin_data: AdminCreate,
     db: Session = Depends(get_db),
-    admin: Admin = Depends(get_current_admin)  # только существующий админ может добавлять новых админов
+    current_admin: Admin = Depends(get_current_admin)
 ):
-    """
-    Принимает user_id, создаёт запись в таблице Admin для указанного пользователя.
-    Если запись уже существует, возвращает ошибку.
-    """
+    user_id = admin_data.user_id
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-
     if user.admin:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="User is already an admin")
-
     new_admin = Admin(user_id=user_id)
     db.add(new_admin)
     db.commit()
@@ -96,17 +111,12 @@ def add_admin(
     return {"msg": f"User {user_id} is now an admin"}
 
 
-# Новый эндпоинт: удаление записи администратора по ID пользователя
 @router.delete("/admins/{user_id}", summary="Удалить запись администратора по ID")
 def delete_admin(
     user_id: int,
     db: Session = Depends(get_db),
-    admin: Admin = Depends(get_current_admin)
+    current_admin: Admin = Depends(get_current_admin)
 ):
-    """
-    Удаляет запись из таблицы администраторов для указанного пользователя.
-    Только администратор может выполнять это действие.
-    """
     admin_record = db.query(Admin).filter(Admin.user_id == user_id).first()
     if not admin_record:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Admin record not found for this user")
@@ -115,18 +125,13 @@ def delete_admin(
     return {"msg": f"Admin privileges revoked for user {user_id}"}
 
 
-# Новый эндпоинт: удаление записи игры по её ID
 @router.delete("/games/{game_id}", summary="Удалить запись игры по ID")
 def delete_game(
     game_id: int,
     db: Session = Depends(get_db),
-    admin: Admin = Depends(get_current_admin)
+    current_admin: Admin = Depends(get_current_admin)
 ):
-    """
-    Удаляет запись об игре по ID.
-    Только администратор может удалять игровые записи.
-    """
-    from .src.database.models import Game  # Импорт модели Game
+    from src.database.models import Game  # Импортируем модель Game
     game = db.query(Game).filter(Game.id == game_id).first()
     if not game:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Game not found")
@@ -135,17 +140,12 @@ def delete_game(
     return {"msg": f"Game {game_id} deleted successfully"}
 
 
-# Новый эндпоинт: удаление фото профиля пользователя (обнуление поля photo)
 @router.delete("/users/{user_id}/photo", summary="Удалить фото профиля пользователя")
 def delete_user_photo(
     user_id: int,
     db: Session = Depends(get_db),
-    admin: Admin = Depends(get_current_admin)
+    current_admin: Admin = Depends(get_current_admin)
 ):
-    """
-    Удаляет фото профиля пользователя, устанавливая поле photo в NULL.
-    Только администратор может выполнять это действие.
-    """
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
@@ -155,23 +155,17 @@ def delete_user_photo(
     return {"msg": f"Profile photo for user {user.username} has been removed"}
 
 
-# Новый эндпоинт: смена никнейма пользователя по ID
 @router.put("/users/{user_id}/username", summary="Сменить никнейм пользователя по ID")
 def change_username(
     user_id: int,
-    new_username: str,
+    username_data: UsernameChange,
     db: Session = Depends(get_db),
-    admin: Admin = Depends(get_current_admin)
+    current_admin: Admin = Depends(get_current_admin)
 ):
-    """
-    Изменяет никнейм пользователя по ID.
-    Только администратор может выполнять это действие.
-    Проверяет, что новый никнейм уникален.
-    """
+    new_username = username_data.new_username
     user = db.query(User).filter(User.id == user_id).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
-    # Проверка уникальности нового никнейма
     existing_user = db.query(User).filter(User.username == new_username).first()
     if existing_user:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Username already taken")

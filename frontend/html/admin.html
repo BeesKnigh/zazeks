@@ -2,49 +2,95 @@
 <html lang="ru">
 <head>
   <meta charset="UTF-8">
-  <title>Админ-панель</title>
-  <link rel="stylesheet" href="/css/admin.css">
+  <title>Админ панель</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f4f4f4;
+      padding: 20px;
+    }
+    h1 {
+      text-align: center;
+    }
+    .panel-section {
+      background: #fff;
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin: 10px auto;
+      max-width: 500px;
+      border-radius: 8px;
+    }
+    .panel-section h2 {
+      margin-top: 0;
+    }
+    .panel-section input {
+      padding: 8px;
+      margin-right: 5px;
+      margin-bottom: 5px;
+    }
+    .panel-section button {
+      padding: 8px 12px;
+      cursor: pointer;
+    }
+    #logout-btn {
+      display: block;
+      margin: 20px auto;
+      background-color: #f44336;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      padding: 10px 20px;
+    }
+  </style>
 </head>
 <body>
-  <header class="header">
-    <h1>Админ-панель</h1>
-    <nav class="nav">
-      <a href="profile.html">Профиль</a>
-      <a href="dashboard.html">Дашборд</a>
-      <a href="logout">Выход</a>
-    </nav>
-  </header>
+  <h1>Админ панель</h1>
 
-  <main class="main-container">
-    <section class="users-section">
-      <h2>Список пользователей</h2>
-      <button id="refresh-btn" class="action-btn">Обновить список</button>
-      <table id="users-table">
-        <thead>
-          <tr>
-            <th>ID</th>
-            <th>Никнейм</th>
-            <th>Фото</th>
-            <th>Победы</th>
-            <th>Действия</th>
-          </tr>
-        </thead>
-        <tbody>
-          <!-- Сюда будут подгружаться данные о пользователях -->
-        </tbody>
-      </table>
-    </section>
-  </main>
-
-  <!-- Модальное окно для изменения никнейма -->
-  <div id="modal" class="modal">
-    <div class="modal-content">
-      <span id="close-modal" class="close">&times;</span>
-      <h3>Изменение никнейма</h3>
-      <input type="text" id="new-username" placeholder="Введите новый никнейм">
-      <button id="confirm-username" class="action-btn">Подтвердить</button>
-    </div>
+  <!-- Удаление пользователя -->
+  <div class="panel-section">
+    <h2>Удаление пользователя</h2>
+    <input type="number" id="delete-user-id" placeholder="ID пользователя">
+    <button id="delete-user-btn">Удалить пользователя</button>
   </div>
+
+  <!-- Добавить админа -->
+  <div class="panel-section">
+    <h2>Добавить админа</h2>
+    <input type="number" id="add-admin-id" placeholder="ID пользователя">
+    <button id="add-admin-btn">Добавить админа</button>
+  </div>
+
+  <!-- Удалить админа -->
+  <div class="panel-section">
+    <h2>Удалить админа</h2>
+    <input type="number" id="delete-admin-id" placeholder="ID пользователя">
+    <button id="delete-admin-btn">Удалить админа</button>
+  </div>
+
+  <!-- Удаление игры -->
+  <div class="panel-section">
+    <h2>Удалить игру</h2>
+    <input type="number" id="delete-game-id" placeholder="ID игры">
+    <button id="delete-game-btn">Удалить игру</button>
+  </div>
+
+  <!-- Удаление фото пользователя -->
+  <div class="panel-section">
+    <h2>Удалить фото пользователя</h2>
+    <input type="number" id="delete-photo-user-id" placeholder="ID пользователя">
+    <button id="delete-photo-btn">Удалить фото</button>
+  </div>
+
+  <!-- Смена никнейма -->
+  <div class="panel-section">
+    <h2>Сменить никнейм пользователя</h2>
+    <input type="number" id="change-username-user-id" placeholder="ID пользователя">
+    <input type="text" id="new-username" placeholder="Новый никнейм">
+    <button id="change-username-btn">Сменить никнейм</button>
+  </div>
+
+  <!-- Выход -->
+  <button id="logout-btn">Выйти</button>
 
   <script src="/JavaScript/admin.js"></script>
 </body>
